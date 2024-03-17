@@ -8,6 +8,9 @@ import (
 
 // Response for the
 type Response struct {
+	Status     string
+	StatusCode int
+
 	Header map[string]interface{}
 	Body   string
 
@@ -24,17 +27,28 @@ func newResponse(conn *gotcpws.Conn) *Response {
 	}
 }
 
-func (resp *Response) Write() error {
+func (resp *Response) write() error {
 	type response struct {
+		Status     string `json:"status"`
+		StatusCode int    `json:"status_code"`
+
 		Header map[string]interface{} `json:"header"`
 		Body   string                 `json:"body"`
 	}
 
 	wrtResp := response{
+		Status:     resp.Status,
+		StatusCode: resp.StatusCode,
+
 		Header: resp.Header,
 		Body:   resp.Body,
 	}
 
-	err := json.NewEncoder(resp.Conn).Encode(wrtResp)
+	msg, err := json.Marshal(wrtResp)
+	if err != nil {
+		return err
+	}
+
+	_, err = resp.Conn.Write(msg)
 	return err
 }

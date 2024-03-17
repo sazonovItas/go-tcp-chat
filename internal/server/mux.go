@@ -60,4 +60,5 @@ func (mh *MuxHandler) Serve(conn *gotcpws.Conn) {
 	}
 
 	handler.Serve(response, request)
+	_ = response.write()
 }

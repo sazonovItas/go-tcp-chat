@@ -11,6 +11,7 @@ export default class WSSocket {
   public connected: boolean;
 
   private timeout?: NodeJS.Timeout;
+  private buf: Buffer;
 
   constructor(
     host: string,
@@ -23,19 +24,28 @@ export default class WSSocket {
     this.host = host;
     this.connected = false;
     this.timeout = undefined;
+    this.buf = Buffer.alloc(0);
 
     if (onConnect !== undefined) {
       this.onConnect = onConnect;
     }
     if (onData !== undefined) {
       this.onData = (data: Buffer) => {
-        const msg = this.unmarshalFrame(data);
-        if (msg === undefined) {
+        this.buf = Buffer.concat([this.buf, data]);
+
+        const msg = this.unmarshalFrame(this.buf);
+        if (msg[0] === undefined) {
+          if (msg[1] == 0) {
+            return;
+          }
+
           this.closeSocket();
+          return;
         }
 
-        if (msg !== null) {
-          onData(msg!);
+        this.buf = this.buf.subarray(msg[1]);
+        if (msg[0] !== undefined) {
+          onData(msg[0]!);
         }
       };
     }
@@ -67,9 +77,12 @@ export default class WSSocket {
     }
 
     try {
+      this.connected = true;
       this.socket?.connect(this.port, this.host);
     } catch (e) {
-      console.error(e);
+      console.log(e);
+      this.connected = false;
+      throw e;
     }
   }
 
@@ -207,26 +220,26 @@ export default class WSSocket {
     return Buffer.concat([frame, data]);
   }
 
-  private unmarshalFrame(data: Buffer): Buffer | undefined {
+  private unmarshalFrame(data: Buffer): [Buffer | undefined, number] {
     for (let i = 0; i < 4; i++) {
       if (data.length <= i || data[i] !== preambule[i]) {
-        return undefined;
+        return [undefined, -1];
       }
     }
 
     let pos = 4;
     if (data.length < pos) {
-      return undefined;
+      return [undefined, -1];
     }
     let b: number = data[pos];
 
     if ((b & 0xff) === 8) {
-      return undefined;
+      return [undefined, -1];
     }
 
     pos++;
     if (data.length < pos) {
-      return undefined;
+      return [undefined, -1];
     }
     b = data[pos];
 
@@ -249,8 +262,13 @@ export default class WSSocket {
     pos++;
     for (let i = pos; i < pos + lengthFields; i++) {
       payloadLen = (payloadLen << 8) | (data[i] & 0xff);
+      console.log(payloadLen);
     }
     pos += lengthFields;
+
+    if (data.length < pos + (mask ? 4 : 0) + payloadLen) {
+      return [undefined, 0];
+    }
 
     if (mask) {
       const maskingKey = data.subarray(pos, pos + 4);
@@ -260,6 +278,6 @@ export default class WSSocket {
       }
     }
 
-    return data.subarray(pos, pos + payloadLen);
+    return [data.subarray(pos, pos + payloadLen), pos + payloadLen];
   }
 }

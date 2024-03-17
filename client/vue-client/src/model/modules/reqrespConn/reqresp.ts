@@ -10,8 +10,8 @@ export interface IRequest {
 }
 
 export interface IResponse {
-  status: number;
-  status_code: string;
+  status: string;
+  status_code: number;
 
   header: TSMap<string, string>;
   body: string;

@@ -31,6 +31,15 @@ func ListenAndServe(addr string, handler Handler) error {
 	return server.ListenAndServe()
 }
 
+func NewServer(addr string, handler Handler) *Server {
+	return &Server{
+		Addr:    addr,
+		Handler: handler,
+		connwg:  &sync.WaitGroup{},
+		conns:   map[*gotcpws.Conn]struct{}{},
+	}
+}
+
 // Server is struct for accepting and serving connections
 type Server struct {
 	Addr    string

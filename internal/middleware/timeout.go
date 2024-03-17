@@ -16,7 +16,8 @@ func Timeout(timeout time.Duration) func(next tcpws.HandlerFunc) tcpws.HandlerFu
 			defer func() {
 				cancel()
 				if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-					resp.Header["Status"] = http.StatusBadGateway
+					resp.Header["Status-Code"] = http.StatusBadGateway
+					resp.Header["Status"] = http.StatusText(http.StatusBadGateway)
 				}
 			}()
 

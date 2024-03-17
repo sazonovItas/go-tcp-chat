@@ -4,8 +4,8 @@ tcp_server:
   timeout: 5s
   idle_timeout: 60s
 storage:
-  name: "postgres"
+  name: "gochat"
   host: "localhost"
   port: "5432"
-  user: "gochat-admin"
-  password: "gochat-admin12345678"
+  user: "gochat_admin"
+  password: "gochat_admin12345"

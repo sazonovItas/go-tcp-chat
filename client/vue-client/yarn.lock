@@ -10745,6 +10745,11 @@ vue@^3.2.13:
     "@vue/server-renderer" "3.4.21"
     "@vue/shared" "3.4.21"
 
+wait-for-event@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/wait-for-event/-/wait-for-event-2.0.1.tgz#ded6375b2f868b06121a1506266d9d69836863d0"
+  integrity sha512-CuUBvs/TnLfmgJvCVTXDU8yl3DyTilEzMYUe7mlGWtiQU1gndKT/lvdaUatG4AVwq+3heXugYTILZDOm4etc2Q==
+
 watchpack-chokidar2@^2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/watchpack-chokidar2/-/watchpack-chokidar2-2.0.1.tgz"
