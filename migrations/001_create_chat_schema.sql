@@ -9,13 +9,6 @@ $$BEGIN
    RETURN NEW;
 END;$$;
 
-CREATE FUNCTION created_at_trigger() RETURNS TRIGGER
-  LANGUAGE plpgsql AS
-$$BEGIN
-  NEW.created_at := current_timestamp;
-  RETURN NEW;
-END;$$;
-
 CREATE TABLE IF NOT EXISTS users (
   id          int           NOT NULL,
   name        VARCHAR(40)   NOT NULL,
@@ -25,10 +18,6 @@ CREATE TABLE IF NOT EXISTS users (
   PRIMARY KEY (id)
 );
 
-CREATE TRIGGER created_at_users_trgr
-  BEFORE UPDATE
-  ON users 
-  FOR EACH ROW EXECUTE PROCEDURE created_at_trigger();
 CREATE TRIGGER updated_at_users_trgr
   BEFORE UPDATE
   ON users 
@@ -44,14 +33,10 @@ CREATE TABLE IF NOT EXISTS conversation (
   FOREIGN KEY (creator_id) REFERENCES users (id)
 );
 
-CREATE TRIGGER created_at_conversation_trgr
-  BEFORE UPDATE
-  ON conversation 
-  FOR EACH ROW EXECUTE PROCEDURE created_at_trigger();
 CREATE TRIGGER updated_at_conversation_trgr
   BEFORE UPDATE
   ON conversation 
-  FOR EACH ROW EXECUTE PROCEDURE created_at_trigger();
+  FOR EACH ROW EXECUTE PROCEDURE updated_at_trigger();
 
 CREATE TABLE IF NOT EXISTS participants (
   id              int   NOT NULL,
@@ -64,14 +49,10 @@ CREATE TABLE IF NOT EXISTS participants (
   FOREIGN KEY (conversation_id) REFERENCES conversation (id)
 );
 
-CREATE TRIGGER created_at_participants_trgr
-  BEFORE UPDATE
-  ON participants 
-  FOR EACH ROW EXECUTE PROCEDURE created_at_trigger();
 CREATE TRIGGER updated_at_participants_trgr
   BEFORE UPDATE
   ON participants 
-  FOR EACH ROW EXECUTE PROCEDURE created_at_trigger();
+  FOR EACH ROW EXECUTE PROCEDURE updated_at_trigger();
 
 CREATE TABLE IF NOT EXISTS messages (
   guid              VARCHAR(100)  NOT NULL,
@@ -83,8 +64,3 @@ CREATE TABLE IF NOT EXISTS messages (
   FOREIGN KEY (sender_id) REFERENCES users (id),
   FOREIGN KEY (conversation_id) REFERENCES conversation (id)
 );
-
-CREATE TRIGGER created_at_messages_trgr
-  BEFORE UPDATE
-  ON messages 
-  FOR EACH ROW EXECUTE PROCEDURE created_at_trigger();

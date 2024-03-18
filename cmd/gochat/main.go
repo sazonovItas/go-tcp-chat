@@ -40,8 +40,9 @@ func main() {
 			resp.Status = http.StatusText(http.StatusOK)
 			resp.StatusCode = http.StatusOK
 			resp.Header["Content-Type"] = "application/json"
-			resp.Header["Content-Length"] = 100
-			resp.Body = "hello, that's me"
+			resp.Body = string(make([]byte, 65536))
+
+			resp.Header["Content-Length"] = len(resp.Body)
 		}),
 	)
 

@@ -5,7 +5,7 @@ export interface IRequest {
   url: string;
   proto: string;
 
-  header: TSMap<string, string>;
+  header: TSMap<string, string | number>;
   body: string;
 }
 
@@ -13,6 +13,6 @@ export interface IResponse {
   status: string;
   status_code: number;
 
-  header: TSMap<string, string>;
+  header: TSMap<string, string | number>;
   body: string;
 }

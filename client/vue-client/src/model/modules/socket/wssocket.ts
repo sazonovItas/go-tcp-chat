@@ -262,7 +262,6 @@ export default class WSSocket {
     pos++;
     for (let i = pos; i < pos + lengthFields; i++) {
       payloadLen = (payloadLen << 8) | (data[i] & 0xff);
-      console.log(payloadLen);
     }
     pos += lengthFields;
 

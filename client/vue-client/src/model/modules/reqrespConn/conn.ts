@@ -1,3 +1,4 @@
+import { HttpStatus, httpStatusTextByCode } from "http-status-ts";
 import { TSMap } from "typescript-map";
 import WSSocket from "../socket/wssocket";
 import { IRequest, IResponse } from "./reqresp";
@@ -11,10 +12,10 @@ export default async function Request(
 ): Promise<IResponse> {
   let received = true;
   let resp = {
-    status: "status bad gateaway",
-    status_code: 502,
+    status: httpStatusTextByCode(HttpStatus.NOT_FOUND),
+    status_code: HttpStatus.NOT_FOUND,
 
-    header: new TSMap<string, string>(),
+    header: new TSMap<string, string | number>(),
     body: "",
   };
 
@@ -48,6 +49,8 @@ export default async function Request(
 
   setTimeout(() => {
     sock.closeSocket();
+    resp.status = httpStatusTextByCode(HttpStatus.BAD_GATEWAY);
+    resp.status_code = HttpStatus.BAD_GATEWAY;
     received = false;
   }, timeout);
 

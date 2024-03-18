@@ -44,11 +44,6 @@ func (resp *Response) write() error {
 		Body:   resp.Body,
 	}
 
-	msg, err := json.Marshal(wrtResp)
-	if err != nil {
-		return err
-	}
-
-	_, err = resp.Conn.Write(msg)
+	err := json.NewEncoder(resp.Conn).Encode(wrtResp)
 	return err
 }

@@ -16,7 +16,9 @@ const req: IRequest = {
   url: "/user/1020",
   proto: "http",
 
-  header: new TSMap<string, string>([["Content-Type", "application/json"]]),
+  header: new TSMap<string, string | number>([
+    ["Content-Type", "application/json"],
+  ]),
   body: "Request sender",
 };
 
@@ -32,9 +34,10 @@ export default defineComponent({
     hiServer() {
       this.disable_req = true;
       this.count++;
+
       Request("127.0.0.1", 5050, 5000, req).then((value) => {
         this.disable_req = false;
-        console.log(value);
+        console.log(value, value.body.length);
       });
     },
   },

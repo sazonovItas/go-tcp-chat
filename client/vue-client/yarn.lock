@@ -6286,6 +6286,11 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
+http-status-ts@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/http-status-ts/-/http-status-ts-2.0.1.tgz#7772db6e009e86688a91a7b205ac7746541fab72"
+  integrity sha512-oUiRl48Ov900YfDgXkaHjmC6V5KJX9Wp2DUL23MwONsLf6SKGxDVgg0Q3v0PBbNhtyzLzCPN/Dz9vFpsY6dSvw==
+
 http2-wrapper@^1.0.0-beta.5.2:
   version "1.0.3"
   resolved "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.3.tgz"

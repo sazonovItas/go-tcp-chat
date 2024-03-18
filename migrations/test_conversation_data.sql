@@ -1,0 +1,15 @@
+INSERT INTO conversation (id, title, creator_id) VALUES
+(0, 'Conversation 0', 0),
+(1, 'Conversation 1', 1),
+(2, 'Conversation 2', 2),
+(3, 'Conversation 3', 3),
+(4, 'Conversation 4', 4),
+(5, 'Conversation 5', 5),
+(6, 'Conversation 6', 6),
+(7, 'Conversation 7', 7),
+(8, 'Conversation 8', 8),
+(9, 'Conversation 9', 9),
+(10, 'Conversation 10', 10),
+(11, 'Conversation 11', 11),
+(12, 'Conversation 12', 12),
+(13, 'General', 13);
