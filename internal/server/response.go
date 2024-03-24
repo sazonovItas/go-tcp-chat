@@ -36,6 +36,8 @@ func (resp *Response) write() error {
 		Body   string                 `json:"body"`
 	}
 
+	resp.Header["Content-Length"] = len(resp.Body)
+
 	wrtResp := response{
 		Status:     resp.Status,
 		StatusCode: resp.StatusCode,

@@ -15,13 +15,13 @@ func (hf HandlerFunc) Serve(resp *Response, req *Request) {
 	hf(resp, req)
 }
 
-// Handler is interface for handle gotcpws connection
-type Handler interface {
+// HandleFunc is interface for handle gotcpws connection
+type HandleFunc interface {
 	Serve(conn *gotcpws.Conn)
 }
 
 // ListenAndServe creates new server
-func ListenAndServe(addr string, handler Handler) error {
+func ListenAndServe(addr string, handler HandleFunc) error {
 	server := &Server{
 		Addr:    addr,
 		Handler: handler,
@@ -31,7 +31,7 @@ func ListenAndServe(addr string, handler Handler) error {
 	return server.ListenAndServe()
 }
 
-func NewServer(addr string, handler Handler) *Server {
+func NewServer(addr string, handler HandleFunc) *Server {
 	return &Server{
 		Addr:    addr,
 		Handler: handler,
@@ -43,7 +43,7 @@ func NewServer(addr string, handler Handler) *Server {
 // Server is struct for accepting and serving connections
 type Server struct {
 	Addr    string
-	Handler Handler
+	Handler HandleFunc
 
 	// ln is listener for addr
 	ln net.Listener

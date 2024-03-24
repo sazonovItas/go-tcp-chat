@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"io"
 	"log"
 	"log/slog"
@@ -9,18 +9,20 @@ import (
 	"os"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
+	"golang.org/x/crypto/bcrypt"
 
-	"github.com/sazonovItas/gochat-tcp/internal/config"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/models"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/postgres"
 	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	"github.com/sazonovItas/gochat-tcp/internal/middleware"
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
+	"github.com/sazonovItas/gochat-tcp/internal/utils"
 )
 
 func main() {
 	// Load config from env variable
-	cfg, err := config.LoadCfgFromEnv("CONFIG_PATH")
+	cfg, err := utils.LoadCfgFromEnv[config.Config]("CONFIG_PATH")
 	if err != nil {
 		log.Fatalf("error to load config: %s", err.Error())
 	}
@@ -30,60 +32,163 @@ func main() {
 	logger := NewLogger(cfg.Env, os.Stdout)
 	_ = logger
 
+	storage, err := postgres.New(cfg.Storage)
+	if err != nil {
+		logger.Error("error to init storage", "error", err)
+		return
+	}
+	defer storage.Close()
+
 	mux := tcpws.NewMuxHandler()
+	mux.Use(middleware.Timeout(cfg.TCPServer.Timeout))
+	mux.Use(middleware.Logger(logger))
+	mux.Use(middleware.RequestId())
+
 	mux.HandleFunc(
 		"GET",
 		"/user/{id}",
-		middleware.Timeout(time.Second)(func(resp *tcpws.Response, req *tcpws.Request) {
+		func(resp *tcpws.Response, req *tcpws.Request) {
 			logger.Info("handling request", "request", req)
 
 			resp.Status = http.StatusText(http.StatusOK)
 			resp.StatusCode = http.StatusOK
 			resp.Header["Content-Type"] = "application/json"
-			resp.Body = string(make([]byte, 65536))
-
-			resp.Header["Content-Length"] = len(resp.Body)
-		}),
+			resp.Body = "hello from server"
+		},
 	)
 
-	// urlExample := "postgres://username:password@localhost:5432/database_name"
-	connUrl := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		cfg.Storage.User,
-		cfg.Storage.Password,
-		cfg.Storage.Host,
-		cfg.Storage.Port,
-		cfg.Storage.Name,
+	db := models.NewModelStorage(storage)
+
+	// Test create user
+	passwordHash, err := bcrypt.GenerateFromPassword(
+		[]byte("itas124"),
+		bcrypt.DefaultCost,
 	)
-
-	db, err := sqlx.Connect("pgx", connUrl)
 	if err != nil {
-		logger.Error("error connect db", "error", err.Error())
-	}
-
-	if err := db.Ping(); err != nil {
-		logger.Error("error to ping db", "error", err.Error())
-	}
-
-	type Message struct {
-		Guid            string `db:"guid"`
-		Sender_id       int    `db:"sender_id"`
-		Conversation_id int    `db:"conversation_id"`
-		Message         string `db:"message"`
-		Created_at      string `db:"created_at"`
-	}
-
-	var messages []Message
-	err = db.Select(&messages, "SELECT * FROM chat.messages")
-	if err != nil {
-		logger.Error("error scan row", "error", err.Error())
+		logger.Error("error to hash password", "error", err.Error())
+		return
 	}
 
 	logger.Info(
-		"message from query row",
-		"messages", messages,
+		"generated password hash",
+		"password_hash",
+		string(passwordHash),
+		"password_hash_len",
+		len(string(passwordHash)),
+		"password",
+		"itas124",
 	)
-	logger.Error("server stoped", "error", tcpws.ListenAndServe(cfg.TCPServer.Addr, mux))
+
+	user_id, err := db.CreateUser(context.Background(), &models.User{
+		Login:        "itas",
+		Name:         "Alex",
+		Color:        "#ef1512",
+		PasswordHash: string(passwordHash),
+	})
+	if err != nil {
+		logger.Error("error to create user", "error", err.Error())
+		return
+	}
+
+	user, err := db.GetUserById(context.Background(), user_id)
+	if err != nil {
+		logger.Error("error to get user", "error", err.Error(), "user_id", user_id)
+		return
+	}
+	logger.Info("get new user from db", "user", user)
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte("itas124"))
+	if err != nil {
+		logger.Error(
+			"error to compare password_hash and password",
+			"error",
+			err,
+			"password_hash",
+			passwordHash,
+			"password",
+			"itas124",
+		)
+		return
+	}
+
+	err = db.UpdateUser(context.Background(), &models.UpdateUser{
+		ID:    user_id,
+		Name:  "Itas",
+		Color: "#ef1",
+	})
+	if err != nil {
+		logger.Error("error to update user", "error", err.Error())
+		return
+	}
+	logger.Info("user updated", "user_id", user_id)
+
+	// Test create conversation
+	conv_id, err := db.CreateConversation(context.Background(), &models.Conversation{
+		Title:            "test",
+		ConversationType: models.Conversation2P2Kind,
+		CreatorId:        1,
+	})
+	if err != nil {
+		logger.Error("error to create user", "error", err.Error())
+		return
+	}
+
+	var conversation models.Conversation
+	err = storage.Get(
+		&conversation,
+		"SELECT id, title, conversation_type, creator_id FROM chat.conversations WHERE id=$1",
+		conv_id,
+	)
+	if err != nil {
+		logger.Error("error to conversation", "error", err.Error(), "conversation_id", conv_id)
+		return
+	}
+	logger.Info("get new conversation from db", "conversation", conversation)
+
+	// Test create message
+	msg_id, err := db.CreateMessage(context.Background(), &models.Message{
+		SenderID:       user_id,
+		ConversationID: conv_id,
+		MessageType:    models.UserTextMessage,
+		Message:        "hello",
+		CreatedAt:      time.Now(),
+	})
+	if err != nil {
+		logger.Error("error to create message", "error", err.Error())
+		return
+	}
+
+	message, err := db.GetMessageById(context.Background(), msg_id)
+	if err != nil {
+		logger.Error("error to get message", "error", err.Error(), "message_id", msg_id)
+		return
+	}
+	logger.Info("get new message from db", "message", message)
+
+	err = db.UpdateMessage(context.Background(), &models.UpdateMessage{
+		ID:        msg_id,
+		Message:   "hi, updated message",
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		logger.Error("error to update message", "error", err.Error())
+	}
+
+	message, err = db.GetMessageById(context.Background(), msg_id)
+	if err != nil {
+		logger.Error("error to get message", "error", err.Error(), "message_id", msg_id)
+		return
+	}
+	logger.Info("get updated message from db", "message", message)
+
+	err = db.DeleteMessageId(context.Background(), msg_id)
+	if err != nil {
+		logger.Error("error to delete message", "error", err.Error(), "msg_id", msg_id)
+		return
+	}
+
+	// handlersSrv := tcpws.NewServer(cfg.TCPServer.Addr, mux)
+	// logger.Error("server stoped", "error", handlersSrv.ListenAndServe())
 }
 
 // Create new logger that is specified by env
