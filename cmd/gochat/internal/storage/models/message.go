@@ -157,6 +157,121 @@ func (ms *MessageStorage) DeleteMessageId(
 	return nil
 }
 
+type APIMessage struct {
+	ID          uuid.UUID   `json:"id"`
+	Sender      APIUser     `json:"user"`
+	MessageType MessageKind `json:"message_kind"`
+	Message     string      `json:"message"`
+	CreatedAt   time.Time   `json:"created_at"`
+}
+
+// APIMessagesFromTimestampByConvId returns sorted asc slice of api messages by timestamp
+// with conversation id = convId from given timestamp to latest messages with limit
+func (ms *MessageStorage) APIMessagesFromTimestampByConvId(
+	ctx context.Context,
+	convId int64,
+	from time.Time,
+	limit int,
+) ([]APIMessage, error) {
+	const op = "gochat.internal.storage.models.message.APIMessagesFromTimestampByConvId"
+
+	rows, err := ms.storage.QueryContext(ctx, `
+    WITH msgs AS (
+      SELECT id AS msg_id, sender_id, message_type, message, created_at FROM chat.messages 
+      WHERE conversation_id=$1 ORDER BY created_at ASC LIMIT $2)
+    SELECT  msgs.msg_id, 
+            users.id, 
+            users.name, 
+            users.color, 
+            msgs.message_type, 
+            msgs.message, 
+            msgs.created_at 
+    FROM msgs
+      JOIN chat.users AS users
+        ON msgs.sender_id = users.id 
+    `, convId, limit)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", op, err)
+	}
+	defer rows.Close()
+
+	var (
+		messages []APIMessage
+		msg      APIMessage
+	)
+	for rows.Next() {
+		err := rows.Scan(
+			&msg.ID,
+			&msg.Sender.ID,
+			&msg.Sender.Name,
+			&msg.Sender.Color,
+			&msg.MessageType,
+			&msg.Message,
+			&msg.CreatedAt,
+		)
+		if err != nil {
+			return messages, err
+		}
+
+		messages = append(messages, msg)
+	}
+
+	return messages, nil
+}
+
+// GetLastAPIMessagesByConvId returns sorted asc slice of last api messages in conversation
+func (ms *MessageStorage) GetLastAPIMessagesByConvId(
+	ctx context.Context,
+	convId int64,
+	count int,
+) ([]APIMessage, error) {
+	const op = "gochat.internal.storage.models.message.APIMessagesByConvIdAndTimestamp"
+
+	rows, err := ms.storage.QueryContext(ctx, `
+    WITH msgs AS (
+      SELECT id AS msg_id, sender_id, message_type, message, created_at FROM chat.messages 
+      WHERE conversation_id=$1 ORDER BY created_at DESC LIMIT $2)
+    SELECT  msgs.msg_id, 
+            users.id, 
+            users.name, 
+            users.color, 
+            msgs.message_type, 
+            msgs.message, 
+            msgs.created_at 
+    FROM msgs
+      JOIN chat.users AS users
+        ON msgs.sender_id = users.id 
+    ORDER BY msgs.created_at ASC
+    `, convId, count)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", op, err)
+	}
+	defer rows.Close()
+
+	var (
+		messages []APIMessage
+		msg      APIMessage
+	)
+	for rows.Next() {
+		err := rows.Scan(
+			&msg.ID,
+			&msg.Sender.ID,
+			&msg.Sender.Name,
+			&msg.Sender.Color,
+			&msg.MessageType,
+			&msg.Message,
+			&msg.CreatedAt,
+		)
+		if err != nil {
+			return messages, err
+		}
+
+		messages = append(messages, msg)
+	}
+
+	return messages, nil
+}
+
 type MessageStorage struct {
 	storage *storage.Storage
 }

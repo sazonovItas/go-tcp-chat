@@ -8,6 +8,12 @@ import (
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
 )
 
+type APIUser struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
 type User struct {
 	ID           int64  `db:"id"`
 	Login        string `db:"login"`
