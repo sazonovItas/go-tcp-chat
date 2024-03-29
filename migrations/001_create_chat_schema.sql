@@ -28,7 +28,7 @@ CREATE TRIGGER updated_at_users_trgr
 CREATE TABLE IF NOT EXISTS conversations (
   id                  bigserial             NOT NULL,
   title               VARCHAR(100)          NOT NULL,
-  conversation_type   int                   NOT NULL,
+  conversation_kind   int                   NOT NULL,
   creator_id          bigserial             NOT NULL,
   created_at          timestamptz           NOT NULL  DEFAULT NOW(),
   updated_at          timestamptz           NOT NULL  DEFAULT NOW(),
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS messages (
   id                uuid            NOT NULL,
   sender_id         bigserial       NOT NULL,
   conversation_id   bigserial       NOT NULL,
-  message_type      int             NOT NULL,
+  message_kind      int             NOT NULL,
   message           VARCHAR(255)    NOT NULL,
   created_at        timestamptz     NOT NULL  DEFAULT NOW(),
   PRIMARY KEY (id),
