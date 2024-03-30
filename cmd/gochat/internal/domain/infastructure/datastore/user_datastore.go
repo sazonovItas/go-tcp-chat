@@ -13,6 +13,10 @@ type UserDatastore interface {
 	Create(ctx context.Context, user *entity.User) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.User, error)
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
+	FindByLoginAndPasswordHash(
+		ctx context.Context,
+		login, passwordHash string,
+	) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, id int64) error
 
@@ -93,6 +97,28 @@ func (us *userDatastore) FindByLogin(ctx context.Context, login string) (*entity
 		&user,
 		"SELECT id, login, name, color, password_hash FROM chat.users WHERE login=$1",
 		login,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return &user, nil
+}
+
+// GetUserByLogin returns user mode struct by login
+func (us *userDatastore) FindByLoginAndPasswordHash(
+	ctx context.Context,
+	login, passwordHash string,
+) (*entity.User, error) {
+	const op = "gochat.internal.domain.infastructure.datastore.user.FindByLoginAndPasswordHash"
+
+	var user entity.User
+	err := us.storage.GetContext(
+		ctx,
+		&user,
+		"SELECT id, login, name, color, password_hash FROM chat.users WHERE login=$1 AND password_hash=$2",
+		login,
+		passwordHash,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

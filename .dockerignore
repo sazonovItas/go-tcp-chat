@@ -1,0 +1,11 @@
+# git files
+.git
+.github
+.gitignore
+*.md
+
+# frontend
+client
+
+# other stuffs
+migrations

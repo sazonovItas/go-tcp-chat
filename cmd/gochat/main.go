@@ -8,7 +8,6 @@ import (
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/router"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/models"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/postgres"
 	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
@@ -29,13 +28,10 @@ func main() {
 
 	storage, err := postgres.New(cfg.Storage)
 	if err != nil {
-		logger.Error("error to init storage", "error", err)
+		logger.Error("error to init storage", "error", err.Error())
 		return
 	}
 	defer storage.Close()
-
-	db := models.NewModelStorage(storage)
-	_ = db
 
 	// create new router for requests
 	mux := router.New(&router.RouterOptions{

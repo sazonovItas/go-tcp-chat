@@ -26,3 +26,5 @@ pnpm-debug.log*
 client/vue-client/dist_electron
 
 migrations/test_*.*
+
+configs
