@@ -21,7 +21,7 @@ type (
 	}
 )
 
-func (e event) EventName() string          { return e.name }
-func (e event) EventPayload() EventPayload { return e.payload }
-func (e event) EventMetadata() Metadata    { return e.metadata }
-func (e event) OccuredAt() time.Time       { return e.occuredAt }
+func (e *event) EventName() string          { return e.name }
+func (e *event) EventPayload() EventPayload { return e.payload }
+func (e *event) EventMetadata() Metadata    { return e.metadata }
+func (e *event) OccuredAt() time.Time       { return e.occuredAt }

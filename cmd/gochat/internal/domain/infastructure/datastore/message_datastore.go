@@ -116,7 +116,6 @@ func (ms *messageDatastore) FindById(
 }
 
 // UpdateMessage updates message
-// TODO: maybe return changed message
 func (ms *messageDatastore) Update(ctx context.Context, message *entity.Message) error {
 	const op = "gochat.internal.domain.infastructure.datastore.message.Update"
 

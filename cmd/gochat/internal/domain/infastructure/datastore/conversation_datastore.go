@@ -72,7 +72,6 @@ func (cs *conversationDatastore) FindById(
 }
 
 // UpdateConversation updates conversation's data
-// TODO: maybe return changed conversation
 func (cs *conversationDatastore) Update(
 	ctx context.Context,
 	conversation *entity.Conversation,

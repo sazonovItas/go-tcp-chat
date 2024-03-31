@@ -13,6 +13,7 @@ type ParticipantDatastore interface {
 	Create(ctx context.Context, participant *entity.Participant) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.Participant, error)
 	FindByUserAndConvId(ctx context.Context, userId, convId int64) (*entity.Participant, error)
+	Update(ctx context.Context, participant *entity.Participant) error
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -24,7 +25,10 @@ func NewParticipantDatastore(db *storage.Storage) ParticipantDatastore {
 	return &participantDatastore{storage: db}
 }
 
-var ErrParticipantDeleteFailed = errors.New("delete participant failed")
+var (
+	ErrParticipantUpdateFailed = errors.New("update participant failed")
+	ErrParticipantDeleteFailed = errors.New("delete participant failed")
+)
 
 // CreateParticipant creates participant and return it's id or 0
 func (ps *participantDatastore) Create(
@@ -88,6 +92,31 @@ func (ps *participantDatastore) FindByUserAndConvId(
 	}
 
 	return &participant, nil
+}
+
+// Update updates participant
+func (ps *participantDatastore) Update(ctx context.Context, participant *entity.Participant) error {
+	const op = "gochat.internal.storage.models.participant.Update"
+
+	result, err := ps.storage.ExecContext(
+		ctx,
+		"UPDATE chat.participants SET updated_at=$1",
+		participant.UpdatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	res, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if res != 1 {
+		return ErrParticipantUpdateFailed
+	}
+
+	return nil
 }
 
 // Delete deletes participant by id

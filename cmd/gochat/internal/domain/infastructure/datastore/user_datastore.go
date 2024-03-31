@@ -21,6 +21,7 @@ type UserDatastore interface {
 	Delete(ctx context.Context, id int64) error
 
 	GetIdByLogin(ctx context.Context, login string) int64
+	GetPublicUsersByConvId(ctx context.Context, convId int64) ([]entity.PublicUser, error)
 }
 
 type userDatastore struct {
@@ -55,18 +56,6 @@ func (us *userDatastore) Create(ctx context.Context, user *entity.User) (int64, 
 	}
 
 	return id, nil
-}
-
-// GetUserId returns user ID or 0 if user does not exists
-func (us *userDatastore) GetIdByLogin(ctx context.Context, login string) int64 {
-	var id int64
-
-	err := us.storage.GetContext(ctx, &id, "SELECT id FROM chat.users WHERE login=$1", login)
-	if err != nil {
-		return 0
-	}
-
-	return id
 }
 
 // FindById returns user model struct by id
@@ -128,7 +117,6 @@ func (us *userDatastore) FindByLoginAndPasswordHash(
 }
 
 // UpdateUser updates user's data
-// TODO: maybe return changed user
 func (us *userDatastore) Update(
 	ctx context.Context,
 	user *entity.User,
@@ -177,4 +165,42 @@ func (us *userDatastore) Delete(ctx context.Context, userId int64) error {
 	}
 
 	return nil
+}
+
+// GetUserId returns user ID or 0 if user does not exists
+func (us *userDatastore) GetIdByLogin(ctx context.Context, login string) int64 {
+	var id int64
+
+	err := us.storage.GetContext(ctx, &id, "SELECT id FROM chat.users WHERE login=$1", login)
+	if err != nil {
+		return 0
+	}
+
+	return id
+}
+
+func (us *userDatastore) GetPublicUsersByConvId(
+	ctx context.Context,
+	convId int64,
+) ([]entity.PublicUser, error) {
+	const op = "gochat.internal.domain.infastructure.datastore.user.GetPublicUsersByConvId"
+
+	var users []entity.PublicUser
+	err := us.storage.SelectContext(
+		ctx,
+		&users,
+		`
+    WITH (
+      SELECT user_id FROM chat.participants WHERE conversation_id=$1
+    ) AS users_ids
+    SELECT U.id, U.login, U.name, U.color 
+    FROM chat.users AS U
+      JOIN users_ids AS UID ON U.id=UID.user_id
+    `,
+		convId)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return users, nil
 }

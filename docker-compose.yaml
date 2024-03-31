@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  cache:
+    image: redis:alpine
+    restart: always
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=redis12345
+      - REDIS_PORT=6379
+      - REDIS_DATABASE=1
+
+  db:
+    image: postgres:alpine
+    restart: always
+    ports:
+      - 5432:5432
+
+  chat:
+    image: gochat-test:v0.0.1
+    build: .
+    command: ./chat
+
+    container_name: gochat
+    ports:
+      - 5050:5050
+
+    depends_on:
+      - cache
