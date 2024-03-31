@@ -37,3 +37,13 @@ func LoadCfgFromFile[T any](configPath string) (*T, error) {
 
 	return &cfg, nil
 }
+
+// GetEnv returns value of environment variable ENV or local if ENV
+func GetEnv() string {
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = "local"
+	}
+
+	return env
+}

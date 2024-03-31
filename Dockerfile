@@ -17,11 +17,10 @@ FROM alpine AS build-release-stage
 
 WORKDIR /app
 
-ENV CONFIG_PATH="./configs/local.yaml"
-
 COPY --from=build-stage /app/chat /app/chat
 COPY --from=build-stage /build/configs /app/configs
 
 EXPOSE 5050
 
+# TODO: remove cmd for docker-compose
 CMD ["./chat"]

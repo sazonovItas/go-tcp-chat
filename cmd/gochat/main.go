@@ -2,9 +2,10 @@ package main
 
 import (
 	"io"
-	"log"
 	"log/slog"
 	"os"
+
+	"github.com/joho/godotenv"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/router"
@@ -15,18 +16,34 @@ import (
 )
 
 func main() {
-	// Load config from env variable
-	cfg, err := utils.LoadCfgFromFile[config.Config](os.Getenv("CONFIG_PATH"))
-	if err != nil {
-		log.Fatalf("error to load config: %s", err.Error())
-	}
-	_ = cfg
+	configEnv := utils.GetEnv()
 
 	// Setup logger
-	logger := NewLogger(cfg.Env, os.Stdout)
+	logger := NewLogger(configEnv, os.Stdout)
 	_ = logger
 
-	storage, err := postgres.New(cfg.Storage)
+	// Load env variable from file
+	err := godotenv.Load("./configs/.env." + configEnv)
+	if err != nil {
+		logger.Error("error to load env variable from file", "error", err.Error())
+		return
+	}
+
+	// Load storage config from env
+	storageCfg, err := utils.LoadCfgFromEnv[config.Storage]()
+	if err != nil {
+		logger.Error("error to load storage config", "error", err.Error())
+		return
+	}
+
+	// Load server config from env
+	serverCfg, err := utils.LoadCfgFromEnv[config.TCPServer]()
+	if err != nil {
+		logger.Error("error to load server config from env", "error", err.Error())
+		return
+	}
+
+	storage, err := postgres.New(storageCfg)
 	if err != nil {
 		logger.Error("error to init storage", "error", err.Error())
 		return
@@ -37,11 +54,11 @@ func main() {
 	mux := router.New(&router.RouterOptions{
 		Logger: logger,
 
-		Timeout:     cfg.TCPServer.Timeout,
-		IdleTimeout: cfg.TCPServer.IdleTimeout,
+		Timeout:     serverCfg.Timeout,
+		IdleTimeout: serverCfg.IdleTimeout,
 	})
 
-	handlersSrv := tcpws.NewServer(cfg.TCPServer.Addr, mux)
+	handlersSrv := tcpws.NewServer(serverCfg.Addr, mux)
 	logger.Error("server stoped", "error", handlersSrv.ListenAndServe())
 }
 

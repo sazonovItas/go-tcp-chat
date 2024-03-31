@@ -26,6 +26,8 @@ services:
     container_name: gochat
     ports:
       - 5050:5050
+    environment:
+      - ENV=local
 
     depends_on:
       - cache
