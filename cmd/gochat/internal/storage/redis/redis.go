@@ -1,4 +1,4 @@
-package redis
+package rediscache
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 // TODO: Addd optional redis config
 // TODO: Need to know more about redis connections
+// TODO: Need to set limits on redis client (MaxActiveConns, MaxIdleConns, ConnMaxLifetime and etc)
 func New(cfg *config.Redis) (*redis.Client, error) {
 	const op = "gochat.internal.storage.redis.New"
 

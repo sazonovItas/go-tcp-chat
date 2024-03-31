@@ -10,7 +10,6 @@ import (
 )
 
 type UserService interface {
-	Create(ctx context.Context, user *entity.User) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.User, error)
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
 	FindPublicUserById(ctx context.Context, id int64) (*entity.PublicUser, error)
@@ -18,7 +17,6 @@ type UserService interface {
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, id int64) error
 
-	GetIdByLogin(ctx context.Context, login string) int64
 	GetPublicUsersByConvId(ctx context.Context, convId int64) ([]entity.PublicUser, error)
 }
 
@@ -35,19 +33,6 @@ func NewUserService(datastore datastore.UserDatastore, opts *cache.CacheOpts) Us
 }
 
 const userCacheKey = "user"
-
-func (us *userService) Create(ctx context.Context, user *entity.User) (int64, error) {
-	id, err := us.datastore.Create(ctx, user)
-	if err != nil {
-		return 0, err
-	}
-
-	key := fmt.Sprintf("%s:%d", userCacheKey, id)
-
-	user.ID = id
-	_ = us.cache.Set(ctx, key, *user, 0)
-	return id, nil
-}
 
 func (us *userService) FindById(ctx context.Context, id int64) (*entity.User, error) {
 	key := fmt.Sprintf("%s:%d", userCacheKey, id)
@@ -125,10 +110,6 @@ func (us *userService) Delete(ctx context.Context, Id int64) error {
 	}
 
 	return us.datastore.Delete(ctx, Id)
-}
-
-func (us *userService) GetIdByLogin(ctx context.Context, login string) int64 {
-	return us.datastore.GetIdByLogin(ctx, login)
 }
 
 func (us *userService) GetPublicUsersByConvId(
