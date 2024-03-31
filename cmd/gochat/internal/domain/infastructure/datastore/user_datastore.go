@@ -13,10 +13,6 @@ type UserDatastore interface {
 	Create(ctx context.Context, user *entity.User) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.User, error)
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
-	FindByLoginAndPasswordHash(
-		ctx context.Context,
-		login, passwordHash string,
-	) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, id int64) error
 
@@ -94,28 +90,6 @@ func (us *userDatastore) FindByLogin(ctx context.Context, login string) (*entity
 	return &user, nil
 }
 
-// GetUserByLogin returns user mode struct by login
-func (us *userDatastore) FindByLoginAndPasswordHash(
-	ctx context.Context,
-	login, passwordHash string,
-) (*entity.User, error) {
-	const op = "gochat.internal.domain.infastructure.datastore.user.FindByLoginAndPasswordHash"
-
-	var user entity.User
-	err := us.storage.GetContext(
-		ctx,
-		&user,
-		"SELECT id, login, name, color, password_hash FROM chat.users WHERE login=$1 AND password_hash=$2",
-		login,
-		passwordHash,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return &user, nil
-}
-
 // UpdateUser updates user's data
 func (us *userDatastore) Update(
 	ctx context.Context,
@@ -147,10 +121,10 @@ func (us *userDatastore) Update(
 }
 
 // Delete deletes user byid
-func (us *userDatastore) Delete(ctx context.Context, userId int64) error {
+func (us *userDatastore) Delete(ctx context.Context, id int64) error {
 	const op = "gochat.internal.domain.infastructure.datastore.user.Delete"
 
-	result, err := us.storage.ExecContext(ctx, "DELETE FROM chat.users WHERE id=$1", userId)
+	result, err := us.storage.ExecContext(ctx, "DELETE FROM chat.users WHERE id=$1", id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

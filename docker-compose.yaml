@@ -19,7 +19,8 @@ services:
 
   chat:
     image: gochat-test:v0.0.1
-    build: .
+    build:
+      context: .
     command: ./chat
 
     container_name: gochat

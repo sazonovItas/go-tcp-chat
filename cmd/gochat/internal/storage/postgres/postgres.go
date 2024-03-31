@@ -39,11 +39,6 @@ func New(cfg *config.Storage) (*storage.Storage, error) {
 		return nil, fmt.Errorf("%s: error connecting to database: %s", op, err.Error())
 	}
 
-	// trying ping database
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("%s: error ping database connection: %s", op, err.Error())
-	}
-
 	// Setting up db connections
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)

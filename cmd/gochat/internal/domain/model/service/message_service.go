@@ -8,6 +8,7 @@ import (
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/infastructure/datastore"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
+	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
 
 type MessageService interface {
@@ -39,10 +40,14 @@ type MessageService interface {
 
 type messageService struct {
 	datastore datastore.MessageDatastore
+	cache     cache.Cache[entity.Participant]
 }
 
-func NewMessageService(datastore datastore.MessageDatastore) MessageService {
-	return &messageService{datastore: datastore}
+func NewMessageService(datastore datastore.MessageDatastore, opts *cache.CacheOpts) MessageService {
+	return &messageService{
+		datastore: datastore,
+		cache:     nil,
+	}
 }
 
 func (ms *messageService) Create(ctx context.Context, msg *entity.Message) (uuid.UUID, error) {

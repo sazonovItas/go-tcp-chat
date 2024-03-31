@@ -9,13 +9,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrCacheMissed = errors.New("cache missed")
+// Erros for upper layer
+var (
+	ErrCacheMissed    = errors.New("cache missed")
+	ErrCacheSetFailed = errors.New("cache set failed")
+	ErrCacheGetFailed = errors.New("cache get failed")
+)
 
-// Cache is interface for redis based cache
+// Cache is interface implementing basic operations on cache
 type Cache[T any] interface {
 	Set(ctx context.Context, key string, value T, expiration time.Duration) error
 	Get(ctx context.Context, key string) (T, error)
 	Delete(ctx context.Context, keys ...string) error
+	Exists(ctx context.Context, key string) bool
 }
 
 // CacheOpts represents options for redis based cache
@@ -25,6 +31,7 @@ type CacheOpts struct {
 	DefaultExpiration time.Duration
 }
 
+// cache represents redis based cache and implements Cache interface
 type cache[T any] struct {
 	client *redis.Client
 
@@ -58,6 +65,7 @@ func (c *cache[T]) Set(
 	return c.client.Set(ctx, key, payload, expiration).Err()
 }
 
+// Get gets data with a key, if key doesn't exist return error
 func (c *cache[T]) Get(ctx context.Context, key string) (value T, err error) {
 	payload, err := c.client.Get(ctx, key).Result()
 	if err != nil {
@@ -72,6 +80,17 @@ func (c *cache[T]) Get(ctx context.Context, key string) (value T, err error) {
 	return value, nil
 }
 
+// Delete deletes keys from the cache
 func (c *cache[T]) Delete(ctx context.Context, keys ...string) error {
 	return c.client.Del(ctx, keys...).Err()
+}
+
+// Exists check existence of a key
+func (c *cache[T]) Exists(ctx context.Context, key string) bool {
+	res, err := c.client.Exists(ctx, key).Result()
+	if err != nil {
+		return false
+	}
+
+	return res > 0
 }

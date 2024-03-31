@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// Load config from env variable
-	cfg, err := utils.LoadCfgFromEnv[config.Config]("CONFIG_PATH")
+	cfg, err := utils.LoadCfgFromFile[config.Config](os.Getenv("CONFIG_PATH"))
 	if err != nil {
 		log.Fatalf("error to load config: %s", err.Error())
 	}

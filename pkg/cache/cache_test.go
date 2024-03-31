@@ -34,18 +34,27 @@ func TestNewCache(t *testing.T) {
 		DefaultExpiration: time.Second * 15,
 	})
 
-	t.Run("check set and get", func(t *testing.T) {
-		err := cache.Set(context.Background(), "test_set_and_get", "test", 0)
+	t.Run("check set data under a key", func(t *testing.T) {
+		err := cache.Set(context.Background(), "test_data", "test", 0)
 		if err != nil {
 			t.Fatal(fmt.Errorf("%s: %w", "error to get value with a key", err))
 		}
+	})
 
-		value, err := cache.Get(context.Background(), "test_set_and_get")
+	t.Run("check get data with a key", func(t *testing.T) {
+		value, err := cache.Get(context.Background(), "test_data")
 		if err != nil {
 			t.Fatal(fmt.Errorf("%s: %w", "error to get value with a key", err))
 		}
 
 		assert.Equal(t, "test", value, "should be equal get after set value")
+	})
+
+	t.Run("check get data with non-existent key", func(t *testing.T) {
+		_, err := cache.Get(context.Background(), "non_existent_key")
+		if assert.Error(t, err, "should be error to retrive non-existent key") {
+			assert.Equal(t, redis.Nil, err, "should nil error to retrive non-existent data")
+		}
 	})
 }
 
@@ -74,24 +83,40 @@ func TestSetGetStructures(t *testing.T) {
 		DefaultExpiration: time.Second * 15,
 	})
 
-	t.Run("check set struct", func(t *testing.T) {
-		testData := testStruct{
-			ID:      1,
-			UUID:    uuid.New(),
-			Product: "test",
-			Price:   102.24,
-		}
+	testData := testStruct{
+		ID:      1,
+		UUID:    uuid.New(),
+		Product: "test",
+		Price:   102.24,
+	}
 
-		err := cache.Set(context.Background(), "test_set_and_get_struct", testData, 0)
+	t.Run("check set data under a key", func(t *testing.T) {
+		err := cache.Set(context.Background(), "test_struct", testData, 0)
 		if err != nil {
 			t.Fatal(fmt.Errorf("%s: %w", "error to set value under a key", err))
 		}
+	})
 
-		value, err := cache.Get(context.Background(), "test_set_and_get_struct")
+	t.Run("check get value", func(t *testing.T) {
+		value, err := cache.Get(context.Background(), "test_struct")
 		if err != nil {
 			t.Fatal(fmt.Errorf("%s: %w", "error to get value with a key", err))
 		}
 
 		assert.Equal(t, testData, value, "set and get value should be equal")
+	})
+
+	t.Run("check get expired data", func(t *testing.T) {
+		err := cache.Set(context.Background(), "test_expired", testStruct{}, time.Millisecond)
+		if err != nil {
+			t.Fatal(fmt.Errorf("%s: %w", "error to set value under a key", err))
+		}
+
+		time.Sleep(time.Millisecond * 20)
+
+		_, err = cache.Get(context.Background(), "test_expired")
+		if assert.Error(t, err, "should be error to retrive expired key") {
+			assert.Equal(t, redis.Nil, err, "should nil error to retrive expired data")
+		}
 	})
 }
