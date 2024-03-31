@@ -10,6 +10,7 @@ import (
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/router"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/postgres"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/redis"
 	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
 	"github.com/sazonovItas/gochat-tcp/internal/utils"
@@ -43,12 +44,25 @@ func main() {
 		return
 	}
 
+	redisCfg, err := utils.LoadCfgFromEnv[config.Redis]()
+	if err != nil {
+		logger.Error("error to load redis config", "error", err.Error())
+		return
+	}
+
 	storage, err := postgres.New(storageCfg)
 	if err != nil {
 		logger.Error("error to init storage", "error", err.Error())
 		return
 	}
 	defer storage.Close()
+
+	redis, err := redis.New(redisCfg)
+	if err != nil {
+		logger.Error("error to init redis", "error", err.Error())
+		return
+	}
+	_ = redis
 
 	// create new router for requests
 	mux := router.New(&router.RouterOptions{

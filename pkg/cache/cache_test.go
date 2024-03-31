@@ -41,6 +41,11 @@ func TestNewCache(t *testing.T) {
 		}
 	})
 
+	t.Run("check exists", func(t *testing.T) {
+		ok := cache.Exists(context.Background(), "test_data")
+		assert.Equal(t, true, ok, "key should exists")
+	})
+
 	t.Run("check get data with a key", func(t *testing.T) {
 		value, err := cache.Get(context.Background(), "test_data")
 		if err != nil {
@@ -50,8 +55,13 @@ func TestNewCache(t *testing.T) {
 		assert.Equal(t, "test", value, "should be equal get after set value")
 	})
 
+	t.Run("check delete data under a key", func(t *testing.T) {
+		err := cache.Delete(context.Background(), "test_data")
+		assert.Equal(t, nil, err, "should not be error delete data under a key from cache")
+	})
+
 	t.Run("check get data with non-existent key", func(t *testing.T) {
-		_, err := cache.Get(context.Background(), "non_existent_key")
+		_, err := cache.Get(context.Background(), "test_data")
 		if assert.Error(t, err, "should be error to retrive non-existent key") {
 			assert.Equal(t, redis.Nil, err, "should nil error to retrive non-existent data")
 		}

@@ -31,6 +31,7 @@ func ListenAndServe(addr string, handler HandleFunc) error {
 	return server.ListenAndServe()
 }
 
+// NewServer creates new server with handler
 func NewServer(addr string, handler HandleFunc) *Server {
 	return &Server{
 		Addr:    addr,
@@ -57,6 +58,7 @@ type Server struct {
 
 // ListenAndServe create listener on server addr, accepting
 // connections and serve connection in goroutine
+// TODO: remove log from the accpeting connection
 func (srv *Server) ListenAndServe() error {
 	// create new listener on addr
 	listener, err := net.Listen("tcp", srv.Addr)
@@ -64,8 +66,9 @@ func (srv *Server) ListenAndServe() error {
 		return err
 	}
 	defer func() {
-		listener.Close()
 		srv.connwg.Wait()
+
+		listener.Close()
 	}()
 
 	srv.ln = listener
@@ -101,6 +104,8 @@ func (srv *Server) ListenAndServe() error {
 	}
 }
 
+// Serve serves connection with server handler
+// if server handler is not setuped will panic
 func (srv *Server) Serve(conn *gotcpws.Conn) {
 	if srv.Handler == nil {
 		panic("server handler is not set")

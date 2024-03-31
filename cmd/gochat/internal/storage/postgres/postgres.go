@@ -18,7 +18,7 @@ const (
 	maxIdleConnLifetime = time.Minute
 )
 
-// TODO: Add optional database config
+// TODO: Add optional postgres config
 // TODO: Need to know more about conns and idle conns to database
 func New(cfg *config.Storage) (*storage.Storage, error) {
 	const op = "gochat.internal.storage.postgres.New"
