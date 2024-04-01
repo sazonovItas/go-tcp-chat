@@ -25,7 +25,7 @@ func NewMuxHandler() *MuxHandler {
 }
 
 // MuxHandler specifies what handler will handle request
-// TODO: replace middlewares with one middleware that will cover another middleware
+// TODO: replace middlewares with one covered middleware
 type MuxHandler struct {
 	routerTree *routingNode
 

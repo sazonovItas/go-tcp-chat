@@ -2,18 +2,27 @@ package app
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/config"
 	"github.com/sazonovItas/gochat-tcp/internal/utils"
 )
 
-type AppConfig struct {
-	Server  config.TCPServer
-	Redis   config.Redis
-	Storage config.Storage
+type AppOptions struct {
+	Env string
+
+	LogWriter io.Writer
 }
 
-func InitAppConfig() (*AppConfig, error) {
+type AppConfig struct {
+	TCPServer    config.TCPServer
+	CacheStorage config.Redis
+	Storage      config.Storage
+
+	Options *AppOptions
+}
+
+func InitAppConfig(opts *AppOptions) (*AppConfig, error) {
 	const op = "gochat.internal.config.app.InitAppConfig"
 
 	serverCfg, err := utils.LoadCfgFromEnv[config.TCPServer]()
@@ -32,8 +41,9 @@ func InitAppConfig() (*AppConfig, error) {
 	}
 
 	return &AppConfig{
-		Server:  *serverCfg,
-		Storage: *storageCfg,
-		Redis:   *redisCfg,
+		TCPServer:    *serverCfg,
+		Storage:      *storageCfg,
+		CacheStorage: *redisCfg,
+		Options:      opts,
 	}, nil
 }

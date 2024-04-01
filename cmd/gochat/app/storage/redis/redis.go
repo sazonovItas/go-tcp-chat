@@ -9,7 +9,7 @@ import (
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/config"
 )
 
-// TODO: Addd optional redis config
+// TODO: Add optional redis config
 // TODO: Need to know more about redis connections
 // TODO: Need to set limits on redis client (MaxActiveConns, MaxIdleConns, ConnMaxLifetime and etc)
 func New(cfg *config.Redis) (*redis.Client, error) {

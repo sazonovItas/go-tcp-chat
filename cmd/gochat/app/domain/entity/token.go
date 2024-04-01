@@ -9,6 +9,6 @@ func (tid TokenID) String() string {
 }
 
 type Token struct {
-	UUID   TokenID `json:"id"`
+	ID     TokenID `json:"id"`
 	UserId int64   `json:"user_id"`
 }

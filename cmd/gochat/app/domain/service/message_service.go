@@ -43,9 +43,9 @@ type messageService struct {
 	cache      cache.Cache[entity.Participant]
 }
 
-func NewMessageService(datastore repo.MessageRepository, opts *cache.CacheOpts) MessageService {
+func NewMessageService(repository repo.MessageRepository, opts *cache.CacheOpts) MessageService {
 	return &messageService{
-		repository: datastore,
+		repository: repository,
 		cache:      nil,
 	}
 }

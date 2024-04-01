@@ -23,11 +23,11 @@ type participantService struct {
 }
 
 func NewParticipantService(
-	datastore repo.ParticipantRepository,
+	repository repo.ParticipantRepository,
 	opts *cache.CacheOpts,
 ) ParticipantService {
 	return &participantService{
-		repository: datastore,
+		repository: repository,
 		cache:      cache.NewCache[entity.Participant](opts),
 	}
 }

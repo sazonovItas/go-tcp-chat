@@ -21,9 +21,9 @@ type friendService struct {
 	cache      cache.Cache[entity.Friend]
 }
 
-func NewFriendService(datastore repo.FriendRepository, opts *cache.CacheOpts) FriendService {
+func NewFriendService(repository repo.FriendRepository, opts *cache.CacheOpts) FriendService {
 	return &friendService{
-		repository: datastore,
+		repository: repository,
 		cache:      cache.NewCache[entity.Friend](opts),
 	}
 }

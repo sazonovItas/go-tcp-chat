@@ -1,52 +1,41 @@
 package main
 
 import (
-	"io"
 	"log"
-	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app"
-	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	"github.com/sazonovItas/gochat-tcp/internal/utils"
 )
 
 func main() {
+	// get value of env variable
 	configEnv := utils.GetEnv()
 
-	// Load env variables from file
-	err := godotenv.Load("./configs/.env." + configEnv)
+	// load env variables from file
+	err := godotenv.Load("./config/.env." + configEnv)
 	if err != nil {
 		log.Fatalf("%s: %s", "error to load env variables from file", err.Error())
-		return
 	}
 
-	// Setup logger
-	logger := NewLogger(configEnv, os.Stdout)
-	_ = logger
+	// init application configuration
+	cfg, err := app.InitAppConfig(&app.AppOptions{
+		Env: configEnv,
 
-	cfg, err := app.InitAppConfig()
+		LogWriter: os.Stdout,
+	})
+	if err != nil || cfg == nil {
+		log.Fatalf("%s: %s", "error to init app config", err.Error())
+	}
+
+	// init application
+	app, err := app.InitApp(cfg)
 	if err != nil {
-		logger.Error("error to init app config", "error", err.Error())
-		return
-	}
-	_ = cfg
-}
-
-// Create new logger that is specified by env
-func NewLogger(env string, out io.Writer) *slog.Logger {
-	var opts sl.HandlerOptions
-
-	switch env {
-	case "local":
-		opts.SlogOpts.Level = slog.LevelDebug
-	case "dev":
-		opts.SlogOpts.Level = slog.LevelDebug
-	case "prod":
-		opts.SlogOpts.Level = slog.LevelInfo
+		log.Fatalf("%s: %s", "error to init app", err.Error())
 	}
 
-	return slog.New(sl.NewHandler(out, opts))
+	// Run application
+	log.Fatal(app.Run())
 }

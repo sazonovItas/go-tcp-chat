@@ -5,13 +5,20 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 )
 
-var ErrTokenNotFound = errors.New("token not found")
+var (
+	ErrGenerateUUID     = errors.New("failed to generate uuid")
+	ErrTokenNotFound    = errors.New("token not found")
+	ErrMismatchedTokens = errors.New("mismatched tokens")
+)
 
-// TokenService is interface for managing user's authorization tokens
-type TokenService interface {
+// AuthService is interface for managing user's authorization tokens
+type AuthService interface {
+	CreateToken(ctx context.Context, userId int64) (entity.Token, error)
 	SaveToken(ctx context.Context, Token entity.Token, expiration time.Duration) error
 	TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error)
 	UserByTokenId(ctx context.Context, id entity.TokenID) (*entity.User, error)
@@ -30,31 +37,60 @@ type UserStorage interface {
 	FindById(ctx context.Context, id int64) (*entity.User, error)
 }
 
-type tokenService struct {
+type authService struct {
 	tokenStorage TokenStorage
 	userStorage  UserStorage
 }
 
-func NewTokenRepository(tokenStorage TokenStorage, userStorage UserStorage) TokenService {
-	return &tokenService{
+func NewAuthService(tokenStorage TokenStorage, userStorage UserStorage) AuthService {
+	return &authService{
 		tokenStorage: tokenStorage,
 		userStorage:  userStorage,
 	}
 }
 
-func (tr *tokenService) SaveToken(
+func (tr *authService) CreateToken(
+	ctx context.Context,
+	userId int64,
+) (token entity.Token, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrGenerateUUID
+		}
+	}()
+
+	token.ID = entity.TokenID(uuid.New())
+	token.UserId = userId
+
+	return
+}
+
+func (tr *authService) Validate(ctx context.Context, authToken entity.Token) error {
+	token, err := tr.TokenById(ctx, authToken.ID)
+	if err != nil {
+		return err
+	}
+
+	if token != authToken {
+		return ErrMismatchedTokens
+	}
+
+	return nil
+}
+
+func (tr *authService) SaveToken(
 	ctx context.Context,
 	Token entity.Token,
 	expiration time.Duration,
 ) error {
-	return tr.tokenStorage.Set(ctx, Token.UUID.String(), Token, expiration)
+	return tr.tokenStorage.Set(ctx, Token.ID.String(), Token, expiration)
 }
 
-func (tr *tokenService) TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error) {
+func (tr *authService) TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error) {
 	return tr.tokenStorage.Get(ctx, id.String())
 }
 
-func (tr *tokenService) UserByTokenId(
+func (tr *authService) UserByTokenId(
 	ctx context.Context,
 	id entity.TokenID,
 ) (*entity.User, error) {
@@ -71,6 +107,6 @@ func (tr *tokenService) UserByTokenId(
 	return user, nil
 }
 
-func (tr *tokenService) DeleteToken(ctx context.Context, id entity.TokenID) error {
+func (tr *authService) DeleteToken(ctx context.Context, id entity.TokenID) error {
 	return tr.tokenStorage.Delete(ctx, id.String())
 }

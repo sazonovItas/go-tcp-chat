@@ -27,9 +27,9 @@ type userService struct {
 	cache      cache.Cache[entity.User]
 }
 
-func NewUserService(datastore repo.UserRepository, opts *cache.CacheOpts) UserService {
+func NewUserService(repository repo.UserRepository, opts *cache.CacheOpts) UserService {
 	return &userService{
-		repository: datastore,
+		repository: repository,
 		cache:      cache.NewCache[entity.User](opts),
 	}
 }

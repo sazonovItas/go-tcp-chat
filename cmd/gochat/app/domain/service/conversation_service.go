@@ -22,11 +22,11 @@ type conversationService struct {
 }
 
 func NewConversationService(
-	datastore repo.ConversationRepository,
+	repository repo.ConversationRepository,
 	opts *cache.CacheOpts,
 ) ConversationService {
 	return &conversationService{
-		repository: datastore,
+		repository: repository,
 		cache:      cache.NewCache[entity.Conversation](opts),
 	}
 }

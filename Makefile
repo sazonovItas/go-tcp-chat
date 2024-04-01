@@ -1,14 +1,14 @@
 .PHONY: run-local
 run-local:
-	CONFIG_PATH=./configs/local.yaml go run cmd/gochat/main.go
+	ENV=local go run cmd/gochat/main.go
 
 .PHONY: run-dev
 run-dev:
-	CONFIG_PATH=./configs/dev.yaml go run cmd/gochat/main.go
+	ENV=dev go run cmd/gochat/main.go
 
 .PHONY: run-prod
 run-prod:
-	CONFIG_PATH=./configs/prod.yaml go run cmd/gochat/main.go
+	ENV=prod go run cmd/gochat/main.go
 
 .PHONY: test 
 test:
