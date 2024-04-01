@@ -14,3 +14,8 @@ type PublicUser struct {
 	Name  string `db:"name"  json:"name"`
 	Color string `db:"color" json:"color"`
 }
+
+type AuthUser struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}

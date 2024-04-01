@@ -13,12 +13,13 @@ func Timeout(timeout time.Duration) tcpws.Middleware {
 	return func(next tcpws.HandlerFunc) tcpws.HandlerFunc {
 		fn := func(resp *tcpws.Response, req *tcpws.Request) {
 			if req.Proto == tcpws.ProtoHTTP {
-				ctx, cancel := context.WithTimeout(req.Context(), timeout)
+				ctx, cancel := context.WithTimeout(req.Ctx(), timeout)
 				defer func() {
 					cancel()
 					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-						resp.Status = http.StatusText(http.StatusBadGateway)
 						resp.StatusCode = http.StatusBadGateway
+						resp.Status = http.StatusText(http.StatusBadGateway)
+						resp.Body = ""
 					}
 				}()
 

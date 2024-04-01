@@ -55,22 +55,13 @@ var (
 )
 
 // CreateMessage creates new message and returns it's id
+// Need to generate uuid and send it with msg entity
 func (ms *messageDatastore) Create(
 	ctx context.Context,
 	msg *entity.Message,
 ) (id uuid.UUID, err error) {
 	const op = "gochat.internal.domain.infastructure.datastore.Create"
 
-	defer func() {
-		if r := recover(); r != nil {
-			err = ErrGenerateUUIDFailed
-		}
-	}()
-
-	// Generate new uuid for message
-	id = uuid.New()
-
-	msg.ID = id
 	result, err := ms.storage.NamedExecContext(
 		ctx,
 		`

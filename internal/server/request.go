@@ -56,7 +56,7 @@ func newRequest(msg []byte) (*Request, error) {
 	}, nil
 }
 
-func (r *Request) Context() context.Context {
+func (r *Request) Ctx() context.Context {
 	if r.ctx == nil {
 		return context.Background()
 	}

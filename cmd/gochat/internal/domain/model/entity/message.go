@@ -10,10 +10,12 @@ import (
 type MessageKind int
 
 const (
-	// UserAddingMessage represents message of adding people to conversation
-	UserAddingMessage MessageKind = 0
-	// UserMessage represents text message from user
-	UserTextMessage MessageKind = 1
+	// CreateConversationMessage represetns a message of creating conversation
+	CreateConversationMessage MessageKind = 0
+	// AddingUserMessage represents a message of adding people to conversation
+	AddingUserMessage MessageKind = 1
+	// UserTextMessage represents a text message from user
+	UserTextMessage MessageKind = 2
 )
 
 type Message struct {

@@ -18,7 +18,7 @@ func RequestId() tcpws.Middleware {
 	return func(next tcpws.HandlerFunc) tcpws.HandlerFunc {
 		fn := func(resp *tcpws.Response, req *tcpws.Request) {
 			myId := NextRequestId()
-			ctx := context.WithValue(req.Context(), RequestIdKey, myId)
+			ctx := context.WithValue(req.Ctx(), RequestIdKey, myId)
 			req = req.WithContext(ctx)
 			next.Serve(resp, req)
 		}

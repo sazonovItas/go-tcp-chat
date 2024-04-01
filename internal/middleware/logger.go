@@ -15,7 +15,7 @@ func Logger(log *slog.Logger) tcpws.Middleware {
 			t1 := time.Now()
 
 			var requestId uint64
-			if reqId, ok := req.Context().Value(RequestIdKey).(uint64); ok {
+			if reqId, ok := req.Ctx().Value(RequestIdKey).(uint64); ok {
 				requestId = reqId
 			}
 
