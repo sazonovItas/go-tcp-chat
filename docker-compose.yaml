@@ -9,7 +9,7 @@ services:
     environment:
       - REDIS_PASSWORD=redis12345
       - REDIS_PORT=6379
-      - REDIS_DATABASE=1
+      - REDIS_DATABASE=0
 
   db:
     image: postgres:alpine

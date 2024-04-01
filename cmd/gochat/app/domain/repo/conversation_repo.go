@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
@@ -27,6 +29,7 @@ func NewConversationRepository(db *storage.Storage) ConversationRepository {
 var (
 	ErrConversationUpdateFailed = errors.New("failed update conversation")
 	ErrConversationDeleteFailed = errors.New("failed delete conversation")
+	ErrConversationNotFound     = errors.New("conversation not found")
 )
 
 // Create creates new conversation and returns conversation id
@@ -65,7 +68,12 @@ func (cs *conversationRepository) FindById(
 		id,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrConversationNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &conversation, err

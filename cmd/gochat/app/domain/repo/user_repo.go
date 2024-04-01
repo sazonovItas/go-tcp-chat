@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
@@ -29,9 +31,9 @@ func NewUserRepository(db *storage.Storage) UserRepository {
 }
 
 var (
-	ErrUserDoesNotExists = errors.New("user does not exists")
-	ErrUserDeleteFailed  = errors.New("failed delete user")
-	ErrUserUpdateFailed  = errors.New("failed update user")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrUserDeleteFailed = errors.New("failed delete user")
+	ErrUserUpdateFailed = errors.New("failed update user")
 )
 
 // CreateUser creates new user and returns user id
@@ -66,7 +68,12 @@ func (us *userRepository) FindById(ctx context.Context, id int64) (*entity.User,
 		id,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrUserNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &user, nil
@@ -84,7 +91,12 @@ func (us *userRepository) FindByLogin(ctx context.Context, login string) (*entit
 		login,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrUserNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &user, nil

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
@@ -48,20 +49,31 @@ func NewMessageRepository(db *storage.Storage) MessageRepository {
 }
 
 var (
-	ErrGenerateUUIDFailed  = errors.New("failed generate uuid")
-	ErrMessageCreateFailed = errors.New("failed create message")
-	ErrMessageUpdateFailed = errors.New("failed update message")
-	ErrMessageDeleteFailed = errors.New("failed to delete message")
+	ErrGenerateUUIDFailed          = errors.New("failed generate uuid")
+	ErrMessageCreateFailed         = errors.New("failed create message")
+	ErrMessageUpdateFailed         = errors.New("failed update message")
+	ErrMessageNotFound             = errors.New("message not found")
+	ErrNoNewMessagesInConversation = errors.New("no new messages in conversation")
+	ErrMessageDeleteFailed         = errors.New("failed to delete message")
 )
 
 // CreateMessage creates new message and returns it's id
-// Need to generate uuid and send it with msg entity
 func (ms *messageRepository) Create(
 	ctx context.Context,
 	msg *entity.Message,
 ) (id uuid.UUID, err error) {
 	const op = "gochat.internal.domain.infastructure.datastore.Create"
 
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrGenerateUUIDFailed
+		}
+	}()
+
+	// Generate new uuid for message
+	id = uuid.New()
+
+	msg.ID = id
 	result, err := ms.storage.NamedExecContext(
 		ctx,
 		`
@@ -100,7 +112,12 @@ func (ms *messageRepository) FindById(
 		id,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrMessageNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &msg, nil
@@ -190,7 +207,12 @@ func (ms *messageRepository) GetConvMessagesPrevTimestamp(
 		limit,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrNoNewMessagesInConversation
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return messages, nil
@@ -221,7 +243,12 @@ func (ms *messageRepository) GetConvMessagesNextTimestamp(
 		limit,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrNoNewMessagesInConversation
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return messages, nil
@@ -247,7 +274,12 @@ func (ms *messageRepository) GetConvMessagesBetweenTimestamp(
 		from,
 		to)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrNoNewMessagesInConversation
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return messages, nil

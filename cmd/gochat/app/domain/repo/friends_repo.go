@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
@@ -24,7 +26,10 @@ func NewFriendRepository(db *storage.Storage) FriendRepository {
 	return &friendRepository{storage: db}
 }
 
-var ErrFriendDeleteFailed = errors.New("delete friend failed")
+var (
+	ErrFriendDeleteFailed = errors.New("delete friend failed")
+	ErrFriendNotFound     = errors.New("friend not found")
+)
 
 // CreateFriend creates friend and return it's id
 func (fs *friendRepository) Create(
@@ -59,7 +64,12 @@ func (fs *friendRepository) FindById(ctx context.Context, id int64) (*entity.Fri
 		id,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrFriendNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &friend, nil
@@ -79,7 +89,12 @@ func (fs *friendRepository) FindByUserAndFriendId(
 		userId, friendId,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrFriendNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &friend, nil

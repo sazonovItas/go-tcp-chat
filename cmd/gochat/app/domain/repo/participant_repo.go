@@ -28,6 +28,7 @@ func NewParticipantRepository(db *storage.Storage) ParticipantRepository {
 var (
 	ErrParticipantUpdateFailed = errors.New("update participant failed")
 	ErrParticipantDeleteFailed = errors.New("delete participant failed")
+	ErrParticipantNotFound     = errors.New("participang not found")
 )
 
 // CreateParticipant creates participant and return it's id or 0
