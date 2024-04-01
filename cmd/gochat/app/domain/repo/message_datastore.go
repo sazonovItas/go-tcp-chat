@@ -1,4 +1,4 @@
-package datastore
+package repo
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
 
-type MessageDatastore interface {
+type MessageRepository interface {
 	Create(ctx context.Context, msg *entity.Message) (uuid.UUID, error)
 	FindById(ctx context.Context, id uuid.UUID) (*entity.Message, error)
 	Update(ctx context.Context, message *entity.Message) error
@@ -39,12 +39,12 @@ type MessageDatastore interface {
 	) ([]entity.Message, error)
 }
 
-type messageDatastore struct {
+type messageRepository struct {
 	storage *storage.Storage
 }
 
-func NewMessageDatastore(db *storage.Storage) MessageDatastore {
-	return &messageDatastore{storage: db}
+func NewMessageRepository(db *storage.Storage) MessageRepository {
+	return &messageRepository{storage: db}
 }
 
 var (
@@ -56,7 +56,7 @@ var (
 
 // CreateMessage creates new message and returns it's id
 // Need to generate uuid and send it with msg entity
-func (ms *messageDatastore) Create(
+func (ms *messageRepository) Create(
 	ctx context.Context,
 	msg *entity.Message,
 ) (id uuid.UUID, err error) {
@@ -87,7 +87,7 @@ func (ms *messageDatastore) Create(
 }
 
 // GetMessageById returns message by id
-func (ms *messageDatastore) FindById(
+func (ms *messageRepository) FindById(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Message, error) {
@@ -107,7 +107,7 @@ func (ms *messageDatastore) FindById(
 }
 
 // UpdateMessage updates message
-func (ms *messageDatastore) Update(ctx context.Context, message *entity.Message) error {
+func (ms *messageRepository) Update(ctx context.Context, message *entity.Message) error {
 	const op = "gochat.internal.domain.infastructure.datastore.message.Update"
 
 	result, err := ms.storage.ExecContext(
@@ -134,7 +134,7 @@ func (ms *messageDatastore) Update(ctx context.Context, message *entity.Message)
 }
 
 // DeleteMessageId deletes message by id
-func (ms *messageDatastore) Delete(
+func (ms *messageRepository) Delete(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
@@ -163,7 +163,7 @@ func (ms *messageDatastore) Delete(
 
 // GetConvMessagesPrevTimestamp returns limit or less messages
 // previous to timestamp from conversation with id equals to convId
-func (ms *messageDatastore) GetConvMessagesPrevTimestamp(
+func (ms *messageRepository) GetConvMessagesPrevTimestamp(
 	ctx context.Context,
 	convId int64,
 	timestamp time.Time,
@@ -198,7 +198,7 @@ func (ms *messageDatastore) GetConvMessagesPrevTimestamp(
 
 // GetConvMessagesNextTimestamp returns limit or less messages
 // next to timestamp from conversation with id equals to convId
-func (ms *messageDatastore) GetConvMessagesNextTimestamp(
+func (ms *messageRepository) GetConvMessagesNextTimestamp(
 	ctx context.Context,
 	convId int64,
 	timestamp time.Time,
@@ -227,7 +227,7 @@ func (ms *messageDatastore) GetConvMessagesNextTimestamp(
 	return messages, nil
 }
 
-func (ms *messageDatastore) GetConvMessagesBetweenTimestamp(
+func (ms *messageRepository) GetConvMessagesBetweenTimestamp(
 	ctx context.Context,
 	convId int64,
 	from, to time.Time,

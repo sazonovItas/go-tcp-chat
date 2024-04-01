@@ -1,27 +1,27 @@
-package datastore
+package repo
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
 
-type ConversationDatastore interface {
+type ConversationRepository interface {
 	Create(ctx context.Context, conversation *entity.Conversation) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.Conversation, error)
 	Update(ctx context.Context, conversation *entity.Conversation) error
 	Delete(ctx context.Context, id int64) error
 }
 
-type conversationDatastore struct {
+type conversationRepository struct {
 	storage *storage.Storage
 }
 
-func NewConversationDatastore(db *storage.Storage) ConversationDatastore {
-	return &conversationDatastore{storage: db}
+func NewConversationRepository(db *storage.Storage) ConversationRepository {
+	return &conversationRepository{storage: db}
 }
 
 var (
@@ -30,7 +30,7 @@ var (
 )
 
 // Create creates new conversation and returns conversation id
-func (cs *conversationDatastore) Create(
+func (cs *conversationRepository) Create(
 	ctx context.Context,
 	conversation *entity.Conversation,
 ) (int64, error) {
@@ -52,7 +52,7 @@ func (cs *conversationDatastore) Create(
 }
 
 // GetById returns conversation by id
-func (cs *conversationDatastore) FindById(
+func (cs *conversationRepository) FindById(
 	ctx context.Context,
 	id int64,
 ) (*entity.Conversation, error) {
@@ -72,7 +72,7 @@ func (cs *conversationDatastore) FindById(
 }
 
 // UpdateConversation updates conversation's data
-func (cs *conversationDatastore) Update(
+func (cs *conversationRepository) Update(
 	ctx context.Context,
 	conversation *entity.Conversation,
 ) error {
@@ -101,7 +101,7 @@ func (cs *conversationDatastore) Update(
 }
 
 // DeleteConversation deletes conversation by id
-func (cs *conversationDatastore) Delete(ctx context.Context, id int64) error {
+func (cs *conversationRepository) Delete(ctx context.Context, id int64) error {
 	const op = "gochat.internal.storage.models.conversation.DeleteConversation"
 
 	result, err := cs.storage.ExecContext(ctx, "DELETE FROM chat.conversations WHERE id=$1", id)

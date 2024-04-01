@@ -4,7 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
 )
 

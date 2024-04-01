@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/infastructure/datastore"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
 	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
 
@@ -17,12 +17,12 @@ type ConversationService interface {
 }
 
 type conversationService struct {
-	datastore datastore.ConversationDatastore
+	datastore repo.ConversationRepository
 	cache     cache.Cache[entity.Conversation]
 }
 
 func NewConversationService(
-	datastore datastore.ConversationDatastore,
+	datastore repo.ConversationRepository,
 	opts *cache.CacheOpts,
 ) ConversationService {
 	return &conversationService{

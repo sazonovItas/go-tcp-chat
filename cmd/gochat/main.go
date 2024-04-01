@@ -7,9 +7,9 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/postgres"
-	rediscache "github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage/redis"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/config"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/postgres"
+	rediscache "github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/redis"
 	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	"github.com/sazonovItas/gochat-tcp/internal/utils"
 )
@@ -21,7 +21,7 @@ func main() {
 	logger := NewLogger(configEnv, os.Stdout)
 	_ = logger
 
-	// Load env variable from file
+	// Load env variables from file
 	err := godotenv.Load("./configs/.env." + configEnv)
 	if err != nil {
 		logger.Error("error to load env variable from file", "error", err.Error())

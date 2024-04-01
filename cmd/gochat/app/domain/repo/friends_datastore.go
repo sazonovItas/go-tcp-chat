@@ -1,33 +1,33 @@
-package datastore
+package repo
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
 
-type FriendDatastore interface {
+type FriendRepository interface {
 	Create(ctx context.Context, friend *entity.Friend) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.Friend, error)
 	FindByUserAndFriendId(ctx context.Context, userId, friendId int64) (*entity.Friend, error)
 	Delete(ctx context.Context, id int64) error
 }
 
-type friendDatastore struct {
+type friendRepository struct {
 	storage *storage.Storage
 }
 
-func NewFriendDatastore(db *storage.Storage) FriendDatastore {
-	return &friendDatastore{storage: db}
+func NewFriendRepository(db *storage.Storage) FriendRepository {
+	return &friendRepository{storage: db}
 }
 
 var ErrFriendDeleteFailed = errors.New("delete friend failed")
 
 // CreateFriend creates friend and return it's id
-func (fs *friendDatastore) Create(
+func (fs *friendRepository) Create(
 	ctx context.Context,
 	friend *entity.Friend,
 ) (int64, error) {
@@ -49,7 +49,7 @@ func (fs *friendDatastore) Create(
 }
 
 // FindById returns friend by unique friend id
-func (fs *friendDatastore) FindById(ctx context.Context, id int64) (*entity.Friend, error) {
+func (fs *friendRepository) FindById(ctx context.Context, id int64) (*entity.Friend, error) {
 	const op = "gochat.internal.domain.infastructure.datastore.participant.FindById"
 
 	var friend entity.Friend
@@ -66,7 +66,7 @@ func (fs *friendDatastore) FindById(ctx context.Context, id int64) (*entity.Frie
 }
 
 // FindByUserAndFriendId returns friend by user id and friend id
-func (fs *friendDatastore) FindByUserAndFriendId(
+func (fs *friendRepository) FindByUserAndFriendId(
 	ctx context.Context,
 	userId, friendId int64,
 ) (*entity.Friend, error) {
@@ -86,7 +86,7 @@ func (fs *friendDatastore) FindByUserAndFriendId(
 }
 
 // Delete deletes friend by id
-func (fs *friendDatastore) Delete(ctx context.Context, id int64) error {
+func (fs *friendRepository) Delete(ctx context.Context, id int64) error {
 	const op = "gochat.internal.domain.infastructure.datastore.participant.Delete"
 
 	result, err := fs.storage.ExecContext(ctx, "DELETE FROM chat.friends WHERE id=$1", id)

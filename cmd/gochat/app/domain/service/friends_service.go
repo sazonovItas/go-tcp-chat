@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/infastructure/datastore"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
 	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
 
@@ -17,11 +17,11 @@ type FriendService interface {
 }
 
 type friendService struct {
-	datastore datastore.FriendDatastore
+	datastore repo.FriendRepository
 	cache     cache.Cache[entity.Friend]
 }
 
-func NewFriendService(datastore datastore.FriendDatastore, opts *cache.CacheOpts) FriendService {
+func NewFriendService(datastore repo.FriendRepository, opts *cache.CacheOpts) FriendService {
 	return &friendService{
 		datastore: datastore,
 		cache:     cache.NewCache[entity.Friend](opts),

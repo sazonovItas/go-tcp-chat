@@ -7,8 +7,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/config"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/config"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/config"
 )
 
 // TODO: Addd optional redis config

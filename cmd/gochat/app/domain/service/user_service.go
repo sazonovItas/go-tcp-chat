@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/infastructure/datastore"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
 	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
 
@@ -21,11 +21,11 @@ type UserService interface {
 }
 
 type userService struct {
-	datastore datastore.UserDatastore
+	datastore repo.UserRepository
 	cache     cache.Cache[entity.User]
 }
 
-func NewUserService(datastore datastore.UserDatastore, opts *cache.CacheOpts) UserService {
+func NewUserService(datastore repo.UserRepository, opts *cache.CacheOpts) UserService {
 	return &userService{
 		datastore: datastore,
 		cache:     cache.NewCache[entity.User](opts),

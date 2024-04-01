@@ -1,15 +1,15 @@
-package datastore
+package repo
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
 
-type UserDatastore interface {
+type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.User, error)
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
@@ -20,12 +20,12 @@ type UserDatastore interface {
 	GetPublicUsersByConvId(ctx context.Context, convId int64) ([]entity.PublicUser, error)
 }
 
-type userDatastore struct {
+type userRepository struct {
 	storage *storage.Storage
 }
 
-func NewUserDatastore(db *storage.Storage) UserDatastore {
-	return &userDatastore{storage: db}
+func NewUserRepository(db *storage.Storage) UserRepository {
+	return &userRepository{storage: db}
 }
 
 var (
@@ -35,7 +35,7 @@ var (
 )
 
 // CreateUser creates new user and returns user id
-func (us *userDatastore) Create(ctx context.Context, user *entity.User) (int64, error) {
+func (us *userRepository) Create(ctx context.Context, user *entity.User) (int64, error) {
 	const op = "gochat.internal.domain.infastructure.datastore.user.Create"
 
 	var id int64
@@ -55,7 +55,7 @@ func (us *userDatastore) Create(ctx context.Context, user *entity.User) (int64, 
 }
 
 // FindById returns user model struct by id
-func (us *userDatastore) FindById(ctx context.Context, id int64) (*entity.User, error) {
+func (us *userRepository) FindById(ctx context.Context, id int64) (*entity.User, error) {
 	const op = "gochat.internal.domain.infastructure.datastore.user.FindById"
 
 	var user entity.User
@@ -73,7 +73,7 @@ func (us *userDatastore) FindById(ctx context.Context, id int64) (*entity.User, 
 }
 
 // GetUserByLogin returns user mode struct by login
-func (us *userDatastore) FindByLogin(ctx context.Context, login string) (*entity.User, error) {
+func (us *userRepository) FindByLogin(ctx context.Context, login string) (*entity.User, error) {
 	const op = "gochat.internal.domain.infastructure.datastore.user.FindByLogin"
 
 	var user entity.User
@@ -91,7 +91,7 @@ func (us *userDatastore) FindByLogin(ctx context.Context, login string) (*entity
 }
 
 // UpdateUser updates user's data
-func (us *userDatastore) Update(
+func (us *userRepository) Update(
 	ctx context.Context,
 	user *entity.User,
 ) error {
@@ -121,7 +121,7 @@ func (us *userDatastore) Update(
 }
 
 // Delete deletes user byid
-func (us *userDatastore) Delete(ctx context.Context, id int64) error {
+func (us *userRepository) Delete(ctx context.Context, id int64) error {
 	const op = "gochat.internal.domain.infastructure.datastore.user.Delete"
 
 	result, err := us.storage.ExecContext(ctx, "DELETE FROM chat.users WHERE id=$1", id)
@@ -142,7 +142,7 @@ func (us *userDatastore) Delete(ctx context.Context, id int64) error {
 }
 
 // GetUserId returns user ID or 0 if user does not exists
-func (us *userDatastore) GetIdByLogin(ctx context.Context, login string) int64 {
+func (us *userRepository) GetIdByLogin(ctx context.Context, login string) int64 {
 	var id int64
 
 	err := us.storage.GetContext(ctx, &id, "SELECT id FROM chat.users WHERE login=$1", login)
@@ -153,7 +153,7 @@ func (us *userDatastore) GetIdByLogin(ctx context.Context, login string) int64 {
 	return id
 }
 
-func (us *userDatastore) GetPublicUsersByConvId(
+func (us *userRepository) GetPublicUsersByConvId(
 	ctx context.Context,
 	convId int64,
 ) ([]entity.PublicUser, error) {

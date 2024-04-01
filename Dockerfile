@@ -18,7 +18,7 @@ FROM alpine AS build-release-stage
 WORKDIR /app
 
 COPY --from=build-stage /app/chat /app/chat
-COPY --from=build-stage /build/configs /app/configs
+COPY --from=build-stage /build/config /app/config
 
 EXPOSE 5050
 

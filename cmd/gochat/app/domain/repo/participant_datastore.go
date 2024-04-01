@@ -1,15 +1,15 @@
-package datastore
+package repo
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/domain/model/entity"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/internal/storage"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 )
 
-type ParticipantDatastore interface {
+type ParticipantRepository interface {
 	Create(ctx context.Context, participant *entity.Participant) (int64, error)
 	FindById(ctx context.Context, id int64) (*entity.Participant, error)
 	FindByUserAndConvId(ctx context.Context, userId, convId int64) (*entity.Participant, error)
@@ -17,12 +17,12 @@ type ParticipantDatastore interface {
 	Delete(ctx context.Context, id int64) error
 }
 
-type participantDatastore struct {
+type participantRepository struct {
 	storage *storage.Storage
 }
 
-func NewParticipantDatastore(db *storage.Storage) ParticipantDatastore {
-	return &participantDatastore{storage: db}
+func NewParticipantRepository(db *storage.Storage) ParticipantRepository {
+	return &participantRepository{storage: db}
 }
 
 var (
@@ -31,7 +31,7 @@ var (
 )
 
 // CreateParticipant creates participant and return it's id or 0
-func (ps *participantDatastore) Create(
+func (ps *participantRepository) Create(
 	ctx context.Context,
 	participant *entity.Participant,
 ) (int64, error) {
@@ -53,7 +53,7 @@ func (ps *participantDatastore) Create(
 }
 
 // FindById returns participant by id
-func (ps *participantDatastore) FindById(
+func (ps *participantRepository) FindById(
 	ctx context.Context,
 	id int64,
 ) (*entity.Participant, error) {
@@ -73,7 +73,7 @@ func (ps *participantDatastore) FindById(
 }
 
 // FindByUserAndConvId deletes participant by user and conversation id
-func (ps *participantDatastore) FindByUserAndConvId(
+func (ps *participantRepository) FindByUserAndConvId(
 	ctx context.Context,
 	userId, convId int64,
 ) (*entity.Participant, error) {
@@ -95,7 +95,10 @@ func (ps *participantDatastore) FindByUserAndConvId(
 }
 
 // Update updates participant
-func (ps *participantDatastore) Update(ctx context.Context, participant *entity.Participant) error {
+func (ps *participantRepository) Update(
+	ctx context.Context,
+	participant *entity.Participant,
+) error {
 	const op = "gochat.internal.storage.models.participant.Update"
 
 	result, err := ps.storage.ExecContext(
@@ -120,7 +123,7 @@ func (ps *participantDatastore) Update(ctx context.Context, participant *entity.
 }
 
 // Delete deletes participant by id
-func (ps *participantDatastore) Delete(ctx context.Context, id int64) error {
+func (ps *participantRepository) Delete(ctx context.Context, id int64) error {
 	const op = "gochat.internal.storage.models.participant.DeleteParticipantById"
 
 	result, err := ps.storage.ExecContext(ctx, "DELETE FROM chat.participants WHERE id=$1", id)
