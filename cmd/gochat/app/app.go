@@ -9,34 +9,33 @@ import (
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
 )
 
-type App interface {
+type Application interface {
 	Logger() *slog.Logger
 	Mux() *tcpws.MuxHandler
-	Storage() *storage.Storage
-	CacheStorage() *redis.Client
 }
 
-var _ App = (&app{})
+var _ Application = (&application{})
 
-func (a *app) Logger() *slog.Logger {
+func (a *application) Logger() *slog.Logger {
 	return a.lg
 }
 
-func (a *app) Mux() *tcpws.MuxHandler {
+func (a *application) Mux() *tcpws.MuxHandler {
 	return a.mux
 }
 
-func (a *app) Storage() *storage.Storage {
-	return a.storage
-}
-
-func (a *app) CacheStorage() *redis.Client {
-	return a.cacheStorage
-}
-
-type app struct {
+type application struct {
 	lg           *slog.Logger
 	mux          *tcpws.MuxHandler
 	storage      *storage.Storage
 	cacheStorage *redis.Client
+}
+
+func (a *application) Run() error {
+	defer func() {
+		a.storage.Close()
+		a.cacheStorage.Close()
+	}()
+
+	return nil
 }

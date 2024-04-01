@@ -17,26 +17,24 @@ type FriendService interface {
 }
 
 type friendService struct {
-	datastore repo.FriendRepository
-	cache     cache.Cache[entity.Friend]
+	repository repo.FriendRepository
+	cache      cache.Cache[entity.Friend]
 }
 
 func NewFriendService(datastore repo.FriendRepository, opts *cache.CacheOpts) FriendService {
 	return &friendService{
-		datastore: datastore,
-		cache:     cache.NewCache[entity.Friend](opts),
+		repository: datastore,
+		cache:      cache.NewCache[entity.Friend](opts),
 	}
 }
 
-const friendCacheKey = "friend"
-
 func (fr *friendService) Create(ctx context.Context, friend *entity.Friend) (int64, error) {
-	id, err := fr.datastore.Create(ctx, friend)
+	id, err := fr.repository.Create(ctx, friend)
 	if err != nil {
 		return 0, err
 	}
 
-	key := fmt.Sprintf("%s:%d", friendCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	friend.ID = id
 	_ = fr.cache.Set(ctx, key, *friend, 0)
@@ -44,14 +42,14 @@ func (fr *friendService) Create(ctx context.Context, friend *entity.Friend) (int
 }
 
 func (fr *friendService) FindById(ctx context.Context, id int64) (*entity.Friend, error) {
-	key := fmt.Sprintf("%s:%d", friendCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	cached, err := fr.cache.Get(ctx, key)
 	if err == nil {
 		return &cached, nil
 	}
 
-	friend, err := fr.datastore.FindById(ctx, id)
+	friend, err := fr.repository.FindById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -64,15 +62,15 @@ func (fr *friendService) FindByUserAndFriendId(
 	ctx context.Context,
 	userId, friendId int64,
 ) (*entity.Friend, error) {
-	return fr.datastore.FindByUserAndFriendId(ctx, userId, friendId)
+	return fr.repository.FindByUserAndFriendId(ctx, userId, friendId)
 }
 
 func (fr *friendService) Delete(ctx context.Context, id int64) error {
-	key := fmt.Sprintf("%s:%d", friendCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	if fr.cache.Exists(ctx, key) {
 		_ = fr.cache.Delete(ctx, key)
 	}
 
-	return fr.datastore.Delete(ctx, id)
+	return fr.repository.Delete(ctx, id)
 }

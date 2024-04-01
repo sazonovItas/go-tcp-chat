@@ -2,14 +2,13 @@ package main
 
 import (
 	"io"
+	"log"
 	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
 
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/config"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/postgres"
-	rediscache "github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/redis"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app"
 	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	"github.com/sazonovItas/gochat-tcp/internal/utils"
 )
@@ -17,51 +16,23 @@ import (
 func main() {
 	configEnv := utils.GetEnv()
 
+	// Load env variables from file
+	err := godotenv.Load("./configs/.env." + configEnv)
+	if err != nil {
+		log.Fatalf("%s: %s", "error to load env variables from file", err.Error())
+		return
+	}
+
 	// Setup logger
 	logger := NewLogger(configEnv, os.Stdout)
 	_ = logger
 
-	// Load env variables from file
-	err := godotenv.Load("./configs/.env." + configEnv)
+	cfg, err := app.InitAppConfig()
 	if err != nil {
-		logger.Error("error to load env variable from file", "error", err.Error())
+		logger.Error("error to init app config", "error", err.Error())
 		return
 	}
-
-	// Load storage config from env
-	storageCfg, err := utils.LoadCfgFromEnv[config.Storage]()
-	if err != nil {
-		logger.Error("error to load storage config", "error", err.Error())
-		return
-	}
-
-	// Load server config from env
-	serverCfg, err := utils.LoadCfgFromEnv[config.TCPServer]()
-	if err != nil {
-		logger.Error("error to load server config from env", "error", err.Error())
-		return
-	}
-	_ = serverCfg
-
-	redisCfg, err := utils.LoadCfgFromEnv[config.Redis]()
-	if err != nil {
-		logger.Error("error to load redis config", "error", err.Error())
-		return
-	}
-
-	storage, err := postgres.New(storageCfg)
-	if err != nil {
-		logger.Error("error to init storage", "error", err.Error())
-		return
-	}
-	defer storage.Close()
-
-	redis, err := rediscache.New(redisCfg)
-	if err != nil {
-		logger.Error("error to init redis", "error", err.Error())
-		return
-	}
-	defer redis.Close()
+	_ = cfg
 }
 
 // Create new logger that is specified by env

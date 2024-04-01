@@ -17,8 +17,8 @@ type ConversationService interface {
 }
 
 type conversationService struct {
-	datastore repo.ConversationRepository
-	cache     cache.Cache[entity.Conversation]
+	repository repo.ConversationRepository
+	cache      cache.Cache[entity.Conversation]
 }
 
 func NewConversationService(
@@ -26,23 +26,21 @@ func NewConversationService(
 	opts *cache.CacheOpts,
 ) ConversationService {
 	return &conversationService{
-		datastore: datastore,
-		cache:     cache.NewCache[entity.Conversation](opts),
+		repository: datastore,
+		cache:      cache.NewCache[entity.Conversation](opts),
 	}
 }
-
-const conversationCacheKey = "conversation"
 
 func (cr *conversationService) Create(
 	ctx context.Context,
 	conversation *entity.Conversation,
 ) (int64, error) {
-	id, err := cr.datastore.Create(ctx, conversation)
+	id, err := cr.repository.Create(ctx, conversation)
 	if err != nil {
 		return 0, err
 	}
 
-	key := fmt.Sprintf("%s:%d", conversationCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	conversation.ID = id
 	_ = cr.cache.Set(ctx, key, *conversation, 0)
@@ -53,14 +51,14 @@ func (cr *conversationService) FindById(
 	ctx context.Context,
 	id int64,
 ) (*entity.Conversation, error) {
-	key := fmt.Sprintf("%s:%d", conversationCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	cached, err := cr.cache.Get(ctx, key)
 	if err == nil {
 		return &cached, nil
 	}
 
-	conversation, err := cr.datastore.FindById(ctx, id)
+	conversation, err := cr.repository.FindById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -73,21 +71,21 @@ func (cr *conversationService) Update(
 	ctx context.Context,
 	conversation *entity.Conversation,
 ) error {
-	key := fmt.Sprintf("%s:%d", conversationCacheKey, conversation.ID)
+	key := fmt.Sprintf("%d", conversation.ID)
 
 	if cr.cache.Exists(ctx, key) {
 		_ = cr.cache.Set(ctx, key, *conversation, 0)
 	}
 
-	return cr.datastore.Update(ctx, conversation)
+	return cr.repository.Update(ctx, conversation)
 }
 
 func (cr *conversationService) Delete(ctx context.Context, id int64) error {
-	key := fmt.Sprintf("%s:%d", conversationCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	if cr.cache.Exists(ctx, key) {
 		_ = cr.cache.Delete(ctx, key)
 	}
 
-	return cr.datastore.Delete(ctx, id)
+	return cr.repository.Delete(ctx, id)
 }

@@ -21,28 +21,26 @@ type UserService interface {
 }
 
 type userService struct {
-	datastore repo.UserRepository
-	cache     cache.Cache[entity.User]
+	repository repo.UserRepository
+	cache      cache.Cache[entity.User]
 }
 
 func NewUserService(datastore repo.UserRepository, opts *cache.CacheOpts) UserService {
 	return &userService{
-		datastore: datastore,
-		cache:     cache.NewCache[entity.User](opts),
+		repository: datastore,
+		cache:      cache.NewCache[entity.User](opts),
 	}
 }
 
-const userCacheKey = "user"
-
 func (us *userService) FindById(ctx context.Context, id int64) (*entity.User, error) {
-	key := fmt.Sprintf("%s:%d", userCacheKey, id)
+	key := fmt.Sprintf("%d", id)
 
 	cached, err := us.cache.Get(ctx, key)
 	if err == nil {
 		return &cached, nil
 	}
 
-	user, err := us.datastore.FindById(ctx, id)
+	user, err := us.repository.FindById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +50,7 @@ func (us *userService) FindById(ctx context.Context, id int64) (*entity.User, er
 }
 
 func (us *userService) FindByLogin(ctx context.Context, login string) (*entity.User, error) {
-	return us.datastore.FindByLogin(ctx, login)
+	return us.repository.FindByLogin(ctx, login)
 }
 
 func (us *userService) FindPublicUserById(
@@ -93,28 +91,28 @@ func (us *userService) Update(
 	ctx context.Context,
 	user *entity.User,
 ) error {
-	key := fmt.Sprintf("%s:%d", userCacheKey, user.ID)
+	key := fmt.Sprintf("%d", user.ID)
 
 	if us.cache.Exists(ctx, key) {
 		_ = us.cache.Set(ctx, key, *user, 0)
 	}
 
-	return us.datastore.Update(ctx, user)
+	return us.repository.Update(ctx, user)
 }
 
 func (us *userService) Delete(ctx context.Context, Id int64) error {
-	key := fmt.Sprintf("%s:%d", userCacheKey, Id)
+	key := fmt.Sprintf("%d", Id)
 
 	if us.cache.Exists(ctx, key) {
 		_ = us.cache.Delete(ctx, key)
 	}
 
-	return us.datastore.Delete(ctx, Id)
+	return us.repository.Delete(ctx, Id)
 }
 
 func (us *userService) GetPublicUsersByConvId(
 	ctx context.Context,
 	convId int64,
 ) ([]entity.PublicUser, error) {
-	return us.datastore.GetPublicUsersByConvId(ctx, convId)
+	return us.repository.GetPublicUsersByConvId(ctx, convId)
 }

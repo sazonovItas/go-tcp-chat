@@ -39,31 +39,31 @@ type MessageService interface {
 }
 
 type messageService struct {
-	datastore repo.MessageRepository
-	cache     cache.Cache[entity.Participant]
+	repository repo.MessageRepository
+	cache      cache.Cache[entity.Participant]
 }
 
 func NewMessageService(datastore repo.MessageRepository, opts *cache.CacheOpts) MessageService {
 	return &messageService{
-		datastore: datastore,
-		cache:     nil,
+		repository: datastore,
+		cache:      nil,
 	}
 }
 
 func (ms *messageService) Create(ctx context.Context, msg *entity.Message) (uuid.UUID, error) {
-	return ms.datastore.Create(ctx, msg)
+	return ms.repository.Create(ctx, msg)
 }
 
 func (ms *messageService) FindById(ctx context.Context, id uuid.UUID) (*entity.Message, error) {
-	return ms.datastore.FindById(ctx, id)
+	return ms.repository.FindById(ctx, id)
 }
 
 func (ms *messageService) Update(ctx context.Context, msg *entity.Message) error {
-	return ms.datastore.Update(ctx, msg)
+	return ms.repository.Update(ctx, msg)
 }
 
 func (ms *messageService) Delete(ctx context.Context, id uuid.UUID) error {
-	return ms.datastore.Delete(ctx, id)
+	return ms.repository.Delete(ctx, id)
 }
 
 func (ms *messageService) GetConvMessagesPrevTimestamp(
@@ -72,7 +72,7 @@ func (ms *messageService) GetConvMessagesPrevTimestamp(
 	timestamp time.Time,
 	limit int,
 ) ([]entity.Message, error) {
-	return ms.datastore.GetConvMessagesPrevTimestamp(ctx, convId, timestamp, limit)
+	return ms.repository.GetConvMessagesPrevTimestamp(ctx, convId, timestamp, limit)
 }
 
 func (ms *messageService) GetConvMessagesNextTimestamp(
@@ -81,7 +81,7 @@ func (ms *messageService) GetConvMessagesNextTimestamp(
 	timestamp time.Time,
 	limit int,
 ) ([]entity.Message, error) {
-	return ms.datastore.GetConvMessagesNextTimestamp(ctx, convId, timestamp, limit)
+	return ms.repository.GetConvMessagesNextTimestamp(ctx, convId, timestamp, limit)
 }
 
 func (ms *messageService) GetConvMessagesBetweenTimestamp(
@@ -89,5 +89,5 @@ func (ms *messageService) GetConvMessagesBetweenTimestamp(
 	convId int64,
 	from, to time.Time,
 ) ([]entity.Message, error) {
-	return ms.datastore.GetConvMessagesBetweenTimestamp(ctx, convId, from, to)
+	return ms.repository.GetConvMessagesBetweenTimestamp(ctx, convId, from, to)
 }

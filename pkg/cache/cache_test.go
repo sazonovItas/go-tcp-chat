@@ -1,3 +1,4 @@
+// TODO: Test key prefix
 package cache
 
 import (
@@ -63,7 +64,7 @@ func TestNewCache(t *testing.T) {
 	t.Run("check get data with non-existent key", func(t *testing.T) {
 		_, err := cache.Get(context.Background(), "test_data")
 		if assert.Error(t, err, "should be error to retrive non-existent key") {
-			assert.Equal(t, redis.Nil, err, "should nil error to retrive non-existent data")
+			assert.Equal(t, ErrKeyNotFound, err, "should nil error to retrive non-existent data")
 		}
 	})
 }
@@ -126,7 +127,59 @@ func TestSetGetStructures(t *testing.T) {
 
 		_, err = cache.Get(context.Background(), "test_expired")
 		if assert.Error(t, err, "should be error to retrive expired key") {
-			assert.Equal(t, redis.Nil, err, "should nil error to retrive expired data")
+			assert.Equal(t, ErrKeyNotFound, err, "should nil error to retrive expired data")
+		}
+	})
+}
+
+func TestKeyPrefix(t *testing.T) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     testAddr,
+		Password: testPassword,
+		DB:       testDB,
+	})
+
+	if client.Ping(context.Background()).Err() != nil {
+		return
+	}
+
+	cache := NewCache[string](&CacheOpts{
+		Client: client,
+
+		KeyPrefix:         "test_data",
+		DefaultExpiration: time.Second * 15,
+	})
+
+	t.Run("check set data under a key", func(t *testing.T) {
+		err := cache.Set(context.Background(), "test_data", "test", 0)
+		if err != nil {
+			t.Fatal(fmt.Errorf("%s: %w", "error to get value with a key", err))
+		}
+	})
+
+	t.Run("check exists", func(t *testing.T) {
+		ok := cache.Exists(context.Background(), "test_data")
+		assert.Equal(t, true, ok, "key should exists")
+	})
+
+	t.Run("check get data with a key", func(t *testing.T) {
+		value, err := cache.Get(context.Background(), "test_data")
+		if err != nil {
+			t.Fatal(fmt.Errorf("%s: %w", "error to get value with a key", err))
+		}
+
+		assert.Equal(t, "test", value, "should be equal get after set value")
+	})
+
+	t.Run("check delete data under a key", func(t *testing.T) {
+		err := cache.Delete(context.Background(), "test_data")
+		assert.Equal(t, nil, err, "should not be error delete data under a key from cache")
+	})
+
+	t.Run("check get data with non-existent key", func(t *testing.T) {
+		_, err := cache.Get(context.Background(), "test_data")
+		if assert.Error(t, err, "should be error to retrive non-existent key") {
+			assert.Equal(t, ErrKeyNotFound, err, "should nil error to retrive non-existent data")
 		}
 	})
 }

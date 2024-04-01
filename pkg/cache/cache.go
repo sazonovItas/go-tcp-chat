@@ -9,18 +9,26 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Erros for upper layer
+// Erros
 var (
-	ErrCacheMissed    = errors.New("cache missed")
-	ErrCacheSetFailed = errors.New("cache set failed")
-	ErrCacheGetFailed = errors.New("cache get failed")
+	ErrKeyNotFound = errors.New("data with a key not found")
 )
 
-// Cache is interface implementing basic operations on cache
+// Cache is interface for caching basic operations
 type Cache[T any] interface {
-	Set(ctx context.Context, key string, value T, expiration time.Duration) error
+	// Set sets data under a key with expiration time
+	// Errors: unknown
+	Set(ctx context.Context, key string, data T, expiration time.Duration) error
+
+	// Get gets data with a key
+	// Errors: ErrCacheMissed, unknown
 	Get(ctx context.Context, key string) (T, error)
+
+	// Delete deletes data with keys
+	// Errors: unknown
 	Delete(ctx context.Context, keys ...string) error
+
+	// Exists check existence of a key
 	Exists(ctx context.Context, key string) bool
 }
 
@@ -28,6 +36,8 @@ type Cache[T any] interface {
 type CacheOpts struct {
 	Client *redis.Client
 
+	// key prefix using for avoid collision with other caches
+	KeyPrefix         string
 	DefaultExpiration time.Duration
 }
 
@@ -35,6 +45,7 @@ type CacheOpts struct {
 type cache[T any] struct {
 	client *redis.Client
 
+	keyPrefix         string
 	defaultExpiration time.Duration
 }
 
@@ -42,18 +53,23 @@ type cache[T any] struct {
 func NewCache[T any](opts *CacheOpts) Cache[T] {
 	return &cache[T]{
 		client:            opts.Client,
+		keyPrefix:         opts.KeyPrefix,
 		defaultExpiration: opts.DefaultExpiration,
 	}
 }
 
-// Set sets data under a key, if expiration is 0, then usgin default expiration
+// Set sets data under a key, if expiration is 0, then using default expiration
 func (c *cache[T]) Set(
 	ctx context.Context,
 	key string,
-	value T,
+	data T,
 	expiration time.Duration,
 ) (err error) {
-	payload, err := json.Marshal(value)
+	if c.keyPrefix != "" {
+		key = c.keyPrefix + ":" + key
+	}
+
+	payload, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -67,9 +83,18 @@ func (c *cache[T]) Set(
 
 // Get gets data with a key, if key doesn't exist return error
 func (c *cache[T]) Get(ctx context.Context, key string) (value T, err error) {
+	if c.keyPrefix != "" {
+		key = c.keyPrefix + ":" + key
+	}
+
 	payload, err := c.client.Get(ctx, key).Result()
 	if err != nil {
-		return value, err
+		switch {
+		case errors.Is(err, redis.Nil):
+			return value, ErrKeyNotFound
+		default:
+			return value, err
+		}
 	}
 
 	err = json.Unmarshal([]byte(payload), &value)
@@ -82,11 +107,24 @@ func (c *cache[T]) Get(ctx context.Context, key string) (value T, err error) {
 
 // Delete deletes keys from the cache
 func (c *cache[T]) Delete(ctx context.Context, keys ...string) error {
-	return c.client.Del(ctx, keys...).Err()
+	prefKeys := make([]string, len(keys))
+	copy(prefKeys, keys)
+
+	if c.keyPrefix != "" {
+		for i := 0; i < len(prefKeys); i++ {
+			prefKeys[i] = c.keyPrefix + ":" + prefKeys[i]
+		}
+	}
+
+	return c.client.Del(ctx, prefKeys...).Err()
 }
 
 // Exists check existence of a key
 func (c *cache[T]) Exists(ctx context.Context, key string) bool {
+	if c.keyPrefix != "" {
+		key = c.keyPrefix + ":" + key
+	}
+
 	res, err := c.client.Exists(ctx, key).Result()
 	if err != nil {
 		return false
