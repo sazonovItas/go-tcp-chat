@@ -2,12 +2,12 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
@@ -113,7 +113,7 @@ func (ms *messageRepository) FindById(
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrMessageNotFound
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
@@ -208,7 +208,7 @@ func (ms *messageRepository) GetConvMessagesPrevTimestamp(
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNoNewMessagesInConversation
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
@@ -244,7 +244,7 @@ func (ms *messageRepository) GetConvMessagesNextTimestamp(
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNoNewMessagesInConversation
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
@@ -275,7 +275,7 @@ func (ms *messageRepository) GetConvMessagesBetweenTimestamp(
 		to)
 	if err != nil {
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNoNewMessagesInConversation
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)

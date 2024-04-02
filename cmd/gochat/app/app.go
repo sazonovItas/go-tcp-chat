@@ -6,6 +6,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/api"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/core"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/postgres"
@@ -51,12 +52,15 @@ func InitApp(cfg *Config) (*Application, error) {
 
 	// setup server address and mux handler routes
 	app.listenAddr = cfg.TCPServer.Addr
-	app.mux = InitMux()
+	app.mux = tcpws.NewMuxHandler()
 
 	// setup middlewares for mux handler
 	app.mux.Use(middleware.RequestId())
 	app.mux.Use(middleware.Logger(app.Logger))
 	app.mux.Use(middleware.Timeout(cfg.TCPServer.Timeout))
+
+	// init routes for app
+	InitRoutes(app.mux, app.Core)
 
 	return &app, nil
 }
@@ -73,8 +77,11 @@ func (app *Application) Run() error {
 	return tcpws.ListenAndServe(app.listenAddr, app.mux)
 }
 
-func InitMux() *tcpws.MuxHandler {
-	mux := tcpws.NewMuxHandler()
+func InitRoutes(mux *tcpws.MuxHandler, core *core.Core) *tcpws.MuxHandler {
+	handlers := api.NewApi(core)
+
+	mux.HandleFunc("POST", "/api/v1/signup", handlers.SignUp)
+	mux.HandleFunc("POST", "/api/v1/signin", handlers.SignIn)
 
 	return mux
 }

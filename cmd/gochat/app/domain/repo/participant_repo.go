@@ -67,7 +67,12 @@ func (ps *participantRepository) FindById(
 		id,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, ErrParticipantNotFound):
+			return nil, ErrParticipantNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &participant, nil
@@ -89,7 +94,12 @@ func (ps *participantRepository) FindByUserAndConvId(
 		convId,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, ErrParticipantNotFound):
+			return nil, ErrParticipantNotFound
+		default:
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
 	return &participant, nil

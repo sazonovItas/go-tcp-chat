@@ -2,10 +2,9 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
@@ -65,7 +64,7 @@ func (fs *friendRepository) FindById(ctx context.Context, id int64) (*entity.Fri
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrFriendNotFound
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
@@ -90,7 +89,7 @@ func (fs *friendRepository) FindByUserAndFriendId(
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrFriendNotFound
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)

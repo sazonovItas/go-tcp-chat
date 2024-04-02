@@ -57,7 +57,7 @@ func (tr *tokenRepository) CreateToken(
 		}
 	}()
 
-	token.ID = entity.TokenID(uuid.New())
+	token.ID = entity.TokenID(uuid.New().String())
 	token.UserId = userId
 	return
 }

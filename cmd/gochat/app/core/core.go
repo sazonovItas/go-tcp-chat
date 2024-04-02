@@ -8,7 +8,6 @@ import (
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/service"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/internal/hasher"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
@@ -21,16 +20,10 @@ type Core struct {
 	ParticipantService  service.ParticipantService
 	UserService         service.UserService
 	AuthService         service.AuthService
-
-	// Additional functionality for the app
-	Hasher hasher.Hasher
 }
 
 func New(storage *storage.Storage, cacheStorage *redis.Client) *Core {
 	var core Core
-
-	// init hasher
-	core.Hasher = hasher.New(10)
 
 	// init conversation service
 	core.ConversationService = service.NewConversationService(

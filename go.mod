@@ -3,7 +3,6 @@ module github.com/sazonovItas/gochat-tcp
 go 1.22.0
 
 require (
-	github.com/blend/go-sdk v1.20220411.3
 	github.com/fatih/color v1.16.0
 	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0

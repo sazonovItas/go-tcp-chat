@@ -5,56 +5,45 @@
     </div>
 
     <div class="v-auth-form">
-      <input
-        class="v-login-input"
-        type="text"
-        placeholder="login"
-        v-model="login"
-      />
-      <input
-        class="v-login-input"
-        type="password"
-        placeholder="password"
-        v-model="password"
-      />
+      <input class="v-login-input" type="text" placeholder="login" v-model="login" />
+      <input class="v-login-input" type="password" placeholder="password" v-model="password" />
 
       <div class="v-login-wrapper">
         <div class="v-login-host-port">
-          <input
-            class="v-login-input"
-            type="text"
-            placeholder="host"
-            v-model="host"
-          />
-          <input
-            class="v-login-input"
-            type="text"
-            placeholder="port"
-            v-model="port"
-          />
+          <input class="v-login-input" type="text" placeholder="host" v-model="host" />
+          <input class="v-login-input" type="text" placeholder="port" v-model="port" />
         </div>
       </div>
     </div>
 
     <div class="v-login-wrapper">
-      <button class="v-login-btn">Sign in</button>
-      <button class="v-login-btn">Sign up</button>
+      <button class="v-login-btn" @click="signIn">Sign in</button>
+      <button class="v-login-btn" @click="signUp">Sign up</button>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { defineComponent, ref } from "vue";
-import { toast } from "vue3-toastify";
+import { ResponseToast, NotifySystem } from "../lib/toasts/notifications";
+import { IResponse } from "../lib/reqresp-conn/reqresp";
+import { Request } from "../lib/reqresp-conn/conn";
+import { TSMap } from "typescript-map";
+import { useStore } from "vuex";
+import { validatePassword, validateLogin } from "../lib/utils/validation";
 
 const login = ref("");
 const password = ref("");
 const host = ref("localhost");
 const port = ref(5050);
 
+let validLogin: string | undefined;
+let validPassword: string | undefined;
+
 export default defineComponent({
   setup() {
     return {
+      store: useStore(),
       login,
       password,
       host,
@@ -62,8 +51,66 @@ export default defineComponent({
     };
   },
   methods: {
-    testToast() {
-      toast.success(login.value, { theme: "dark" });
+    signUp() {
+      if (!this.validateUserData()) {
+        return;
+      }
+
+      Request(host.value, port.value, this.store.state.requestTimeout, {
+        method: "POST",
+        url: "/api/v1/signup",
+        proto: "http",
+
+        header: new TSMap([["Content-Type", "application/json"]]),
+        body: JSON.stringify({
+          login: login.value.trim(),
+          password: password.value.trim(),
+        }),
+      })
+        .then((value: IResponse) => {
+          ResponseToast.notify(value.status_code, value.status);
+        })
+        .catch((error) => {
+          NotifySystem.notify("error", error);
+        });
+    },
+    signIn() {
+      if (!this.validateUserData()) {
+        return;
+      }
+
+      Request(host.value, port.value, this.store.state.requestTimeout, {
+        method: "POST",
+        url: "/api/v1/signin",
+        proto: "http",
+
+        header: new TSMap([["Content-Type", "application/json"]]),
+        body: JSON.stringify({
+          login: login.value.trim(),
+          password: password.value.trim(),
+        }),
+      })
+        .then((value: IResponse) => {
+          ResponseToast.notify(value.status_code, value.status);
+        })
+        .catch((error) => {
+          NotifySystem.notify("error", error);
+        });
+    },
+    validateUserData(): boolean {
+      validLogin = validateLogin(login.value.trim());
+      if (validLogin !== undefined) {
+        NotifySystem.notify("warning", validLogin);
+        return false;
+      }
+
+      validPassword = validatePassword(password.value.trim());
+      if (validPassword !== undefined) {
+        NotifySystem.notify("warning", validPassword);
+        return false;
+      }
+
+      return true;
     },
   },
 });

@@ -3,11 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/internal/color"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/internal/hasher"
 )
+
+const DefaultTokenExpiration = time.Minute * 30
 
 var (
 	ErrMismatchedTokens = errors.New("mismatched tokens")
@@ -18,7 +22,7 @@ var (
 type AuthService interface {
 	SignUp(ctx context.Context, authUser *entity.AuthUser) (*entity.User, error)
 	SignIn(ctx context.Context, authUser *entity.AuthUser, user *entity.User) (entity.Token, error)
-	Validate(ctx context.Context, authToken entity.Token) error
+	ValidateToken(ctx context.Context, authToken entity.Token) error
 }
 
 type authService struct {
@@ -51,7 +55,7 @@ func (aus *authService) SignUp(
 	user := &entity.User{
 		Login:        authUser.Login,
 		Name:         authUser.Login,
-		Color:        "#423bbb",
+		Color:        color.GetRandomColorInHex(),
 		PasswordHash: string(passwordHash),
 	}
 	return user, nil
@@ -72,10 +76,20 @@ func (aus *authService) SignIn(
 		}
 	}
 
-	return aus.tokenRepository.CreateToken(ctx, user.ID)
+	tk, err := aus.tokenRepository.CreateToken(ctx, user.ID)
+	if err != nil {
+		return entity.Token{}, err
+	}
+
+	err = aus.tokenRepository.SaveToken(ctx, tk, DefaultTokenExpiration)
+	if err != nil {
+		return entity.Token{}, nil
+	}
+
+	return tk, nil
 }
 
-func (aus *authService) Validate(ctx context.Context, authToken entity.Token) error {
+func (aus *authService) ValidateToken(ctx context.Context, authToken entity.Token) error {
 	tk, err := aus.tokenRepository.TokenById(ctx, authToken.ID)
 	if err != nil {
 		return err

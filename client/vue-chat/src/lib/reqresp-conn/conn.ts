@@ -12,8 +12,8 @@ export async function Request(
 ): Promise<IResponse> {
   let received = true;
   let resp: IResponse = {
-    status: httpStatusTextByCode(HttpStatus.NOT_FOUND),
-    status_code: HttpStatus.NOT_FOUND,
+    status: httpStatusTextByCode(HttpStatus.SERVICE_UNAVAILABLE),
+    status_code: HttpStatus.SERVICE_UNAVAILABLE,
 
     header: new TSMap<string, string | number>(),
     body: "",

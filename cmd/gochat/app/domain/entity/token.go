@@ -1,14 +1,14 @@
 package entity
 
-import "github.com/google/uuid"
-
-type TokenID uuid.UUID
+type TokenID string
 
 func (tid TokenID) String() string {
-	return (uuid.UUID(tid)).String()
+	return string(tid)
 }
 
 type Token struct {
-	ID     TokenID `json:"id"`
-	UserId int64   `json:"user_id"`
+	ID           TokenID `json:"id"`
+	UserId       int64   `json:"user_id"`
+	Login        string  `json:"login"`
+	PasswordHash string  `json:"password_hash"`
 }
