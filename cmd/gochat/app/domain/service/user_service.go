@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
 	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
+
+var ErrUserLoginAlreadyExists = errors.New("user login already exists")
 
 type UserService interface {
 	Create(ctx context.Context, user *entity.User) (int64, error)
@@ -20,6 +23,8 @@ type UserService interface {
 
 	GetIdByLogin(ctx context.Context, login string) int64
 	GetPublicUsersByConvId(ctx context.Context, convId int64) ([]entity.PublicUser, error)
+
+	ValidateLogin(ctx context.Context, login string) error
 }
 
 type userService struct {
@@ -134,4 +139,18 @@ func (us *userService) GetPublicUsersByConvId(
 	convId int64,
 ) ([]entity.PublicUser, error) {
 	return us.repository.GetPublicUsersByConvId(ctx, convId)
+}
+
+func (us *userService) ValidateLogin(ctx context.Context, login string) error {
+	_, err := us.FindByLogin(ctx, login)
+	if err != nil {
+		switch {
+		case errors.Is(err, repo.ErrUserNotFound):
+			return nil
+		default:
+			return err
+		}
+	}
+
+	return ErrUserLoginAlreadyExists
 }
