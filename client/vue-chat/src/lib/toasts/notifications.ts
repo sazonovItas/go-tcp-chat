@@ -6,25 +6,25 @@ class notificationSystem {
       case "success":
         toast.success(msg, {
           theme: "dark",
-          autoClose: 3000,
+          autoClose: 2000,
         });
         break;
       case "warning":
         toast.warning(msg, {
           theme: "dark",
-          autoClose: 3000,
+          autoClose: 2000,
         });
         break;
       case "error":
         toast.error(msg, {
           theme: "dark",
-          autoClose: 3000,
+          autoClose: 2000,
         });
         break;
       default:
         toast.info(msg, {
           theme: "dark",
-          autoClose: 3000,
+          autoClose: 2000,
         });
     }
   }
@@ -37,22 +37,22 @@ class responseToast {
     if (statusCode >= 100 && statusCode < 200) {
       toast.info(statusCode + "\n" + status, {
         theme: "dark",
-        autoClose: 3000,
+        autoClose: 2000,
       });
     } else if (statusCode >= 200 && statusCode < 300) {
       toast.success(statusCode + "\n" + status, {
         theme: "dark",
-        autoClose: 3000,
+        autoClose: 2000,
       });
     } else if (statusCode >= 400 && statusCode < 500) {
       toast.warning(statusCode + "\n" + status, {
         theme: "dark",
-        autoClose: 3000,
+        autoClose: 2000,
       });
     } else if (statusCode >= 500) {
       toast.error(statusCode + "\n" + status, {
         theme: "dark",
-        autoClose: 3000,
+        autoClose: 2000,
       });
     }
   }

@@ -19,3 +19,7 @@ export interface IResponse {
   header: TSMap<string, string | number>;
   body: string;
 }
+
+export function successResponse(resp: IResponse): boolean {
+  return resp.status_code >= 200 && resp.status_code < 300;
+}

@@ -1,30 +1,19 @@
+import { IToken } from "./token";
+
 export class User {
-  public login: string | undefined;
-  public name: string | undefined;
+  public user: IUser | undefined;
+  public token: IToken | undefined;
 
-  private id: number | undefined;
-  private sessionToken: string | undefined;
-
-  public User(sessionToken: string, id: number, login: string, name: string) {
-    this.sessionToken = sessionToken;
-
-    this.name = name;
-  }
-
-  public stringify(): string {
-    return JSON.stringify({
-      sessionToken: this.sessionToken,
-
-      name: this.name,
-    });
+  constructor(token: IToken, user: IUser) {
+    this.token = token;
+    this.user = user;
   }
 }
 
 export interface IUser {
-  sessionToken: string;
-
   id: number;
-  login: string;
   name: string;
-  password: string;
+  login: string;
+  color: string;
+  password_hash: string;
 }

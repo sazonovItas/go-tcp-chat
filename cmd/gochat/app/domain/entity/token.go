@@ -7,8 +7,6 @@ func (tid TokenID) String() string {
 }
 
 type Token struct {
-	ID           TokenID `json:"id"`
-	UserId       int64   `json:"user_id"`
-	Login        string  `json:"login"`
-	PasswordHash string  `json:"password_hash"`
+	ID     TokenID `json:"id"`
+	UserId int64   `json:"user_id"`
 }

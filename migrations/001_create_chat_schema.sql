@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_id         bigserial       NOT NULL,
   conversation_id   bigserial       NOT NULL,
   message_kind      int             NOT NULL,
-  message           VARCHAR(255)    NOT NULL,
+  message           VARCHAR(1024)   NOT NULL,
   created_at        timestamptz     NOT NULL  DEFAULT NOW(),
   PRIMARY KEY (id),
   FOREIGN KEY (sender_id) REFERENCES users (id),

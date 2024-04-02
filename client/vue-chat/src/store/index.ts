@@ -1,9 +1,19 @@
-import { createStore } from "vuex";
+import WSSocket from "@/lib/socket/wssocket";
+import { createStore, Store } from "vuex";
+import { User } from "./models/user";
 
-const store = createStore({
+export interface IState {
+  requestTimeout: number;
+  user: User | undefined;
+  conn: WSSocket | undefined;
+}
+
+const store: Store<IState> = createStore({
   state() {
     return {
-      requestTimeout: 5000,
+      requestTimeout: 2000,
+      user: undefined,
+      conn: undefined,
     };
   },
   getters: {},

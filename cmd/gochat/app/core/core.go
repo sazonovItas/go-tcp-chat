@@ -1,6 +1,7 @@
 package core
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -13,6 +14,9 @@ import (
 )
 
 type Core struct {
+	// Logger for logging
+	Logger *slog.Logger
+
 	// Services that using by app
 	ConversationService service.ConversationService
 	FriendService       service.FriendService
@@ -22,8 +26,10 @@ type Core struct {
 	AuthService         service.AuthService
 }
 
-func New(storage *storage.Storage, cacheStorage *redis.Client) *Core {
+func New(storage *storage.Storage, cacheStorage *redis.Client, lg *slog.Logger) *Core {
 	var core Core
+
+	core.Logger = lg
 
 	// init conversation service
 	core.ConversationService = service.NewConversationService(

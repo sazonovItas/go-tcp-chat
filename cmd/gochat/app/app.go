@@ -48,7 +48,7 @@ func InitApp(cfg *Config) (*Application, error) {
 	app.cacheStorage = cache
 
 	// init core
-	app.Core = core.New(db, cache)
+	app.Core = core.New(db, cache, app.Logger)
 
 	// setup server address and mux handler routes
 	app.listenAddr = cfg.TCPServer.Addr

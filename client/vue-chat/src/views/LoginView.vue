@@ -26,11 +26,17 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { ResponseToast, NotifySystem } from "../lib/toasts/notifications";
-import { IResponse } from "../lib/reqresp-conn/reqresp";
+import { IResponse, successResponse } from "../lib/reqresp-conn/reqresp";
 import { Request } from "../lib/reqresp-conn/conn";
 import { TSMap } from "typescript-map";
 import { useStore } from "vuex";
 import { validatePassword, validateLogin } from "../lib/utils/validation";
+import {
+  signUpEndpoint,
+  signInEndpoint,
+  ISignInResponse,
+} from "../store/endpoints/endpoints";
+import { User } from "../store/models/user";
 
 const login = ref("");
 const password = ref("");
@@ -44,10 +50,10 @@ export default defineComponent({
   setup() {
     return {
       store: useStore(),
-      login,
-      password,
-      host,
-      port,
+      login: login,
+      password: password,
+      host: host,
+      port: port,
     };
   },
   methods: {
@@ -58,7 +64,7 @@ export default defineComponent({
 
       Request(host.value, port.value, this.store.state.requestTimeout, {
         method: "POST",
-        url: "/api/v1/signup",
+        url: signUpEndpoint,
         proto: "http",
 
         header: new TSMap([["Content-Type", "application/json"]]),
@@ -69,6 +75,9 @@ export default defineComponent({
       })
         .then((value: IResponse) => {
           ResponseToast.notify(value.status_code, value.status);
+          if (successResponse(value)) {
+            this.signIn();
+          }
         })
         .catch((error) => {
           NotifySystem.notify("error", error);
@@ -81,17 +90,27 @@ export default defineComponent({
 
       Request(host.value, port.value, this.store.state.requestTimeout, {
         method: "POST",
-        url: "/api/v1/signin",
+        url: signInEndpoint,
         proto: "http",
 
         header: new TSMap([["Content-Type", "application/json"]]),
         body: JSON.stringify({
-          login: login.value.trim(),
+          login: login.value.trimRight(),
           password: password.value.trim(),
         }),
       })
-        .then((value: IResponse) => {
-          ResponseToast.notify(value.status_code, value.status);
+        .then((resp: IResponse) => {
+          ResponseToast.notify(resp.status_code, resp.status);
+
+          if (successResponse(resp)) {
+            try {
+              const value: ISignInResponse = JSON.parse(resp.body);
+              this.store.state.user = new User(value.auth_token, value.user);
+              NotifySystem.notify("success", `Welcom ${value.user.name}`);
+            } catch (e) {
+              NotifySystem.notify("error", "error parse json");
+            }
+          }
         })
         .catch((error) => {
           NotifySystem.notify("error", error);
@@ -104,7 +123,7 @@ export default defineComponent({
         return false;
       }
 
-      validPassword = validatePassword(password.value.trim());
+      validPassword = validatePassword(password.value);
       if (validPassword !== undefined) {
         NotifySystem.notify("warning", validPassword);
         return false;

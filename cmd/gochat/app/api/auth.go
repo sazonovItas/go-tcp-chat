@@ -103,8 +103,15 @@ func (api *Api) SignIn(resp *tcpws.Response, req *tcpws.Request) {
 		return
 	}
 
-	// prepare token for sending
-	token, err := json.Marshal(tk)
+	type responseData struct {
+		AuthToken entity.Token `json:"auth_token"`
+		User      entity.User  `json:"user"`
+	}
+
+	data, err := json.Marshal(responseData{
+		AuthToken: tk,
+		User:      *user,
+	})
 	if err != nil {
 		resp.StatusCode = http.StatusInternalServerError
 		resp.Status = fmt.Errorf("%s: %w", op, err).Error()
@@ -113,5 +120,5 @@ func (api *Api) SignIn(resp *tcpws.Response, req *tcpws.Request) {
 
 	resp.StatusCode = http.StatusOK
 	resp.Status = SuccessfulSignIn
-	resp.Body = string(token)
+	resp.Body = string(data)
 }
