@@ -3,22 +3,16 @@ package app
 import (
 	"io"
 	"log/slog"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/core"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/service"
-	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/internal/hasher"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/postgres"
 	rediscache "github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage/redis"
 	"github.com/sazonovItas/gochat-tcp/internal/logger/sl"
 	"github.com/sazonovItas/gochat-tcp/internal/middleware"
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
-	"github.com/sazonovItas/gochat-tcp/pkg/cache"
 )
 
 type Application struct {
@@ -32,7 +26,7 @@ type Application struct {
 	cacheStorage *redis.Client
 }
 
-func InitApp(cfg *AppConfig) (*Application, error) {
+func InitApp(cfg *Config) (*Application, error) {
 	var app Application
 
 	// init logger
@@ -53,7 +47,7 @@ func InitApp(cfg *AppConfig) (*Application, error) {
 	app.cacheStorage = cache
 
 	// init core
-	app.Core = InitCore(db, cache)
+	app.Core = core.New(db, cache)
 
 	// setup server address and mux handler routes
 	app.listenAddr = cfg.TCPServer.Addr
@@ -77,65 +71,6 @@ func (app *Application) Run() error {
 
 	app.Logger.Info("server start running")
 	return tcpws.ListenAndServe(app.listenAddr, app.mux)
-}
-
-func InitCore(storage *storage.Storage, cacheStorage *redis.Client) *core.Core {
-	var core core.Core
-
-	// init hasher
-	core.Hasher = hasher.New(10)
-
-	// init conversation service
-	core.ConversationService = service.NewConversationService(
-		repo.NewConversationRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "conversation",
-			DefaultExpiration: time.Minute * 5,
-		},
-	)
-
-	// init friend service
-	core.FriendService = service.NewFriendService(
-		repo.NewFriendRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "friend",
-			DefaultExpiration: time.Minute * 5,
-		},
-	)
-
-	// init message service
-	core.MessageService = service.NewMessageService(repo.NewMessageRepository(storage), nil)
-
-	// init participant service
-	core.ParticipantService = service.NewParticipantService(
-		repo.NewParticipantRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "participant",
-			DefaultExpiration: time.Minute * 5,
-		})
-
-	// init user service
-	core.UserService = service.NewUserService(
-		repo.NewUserRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "user",
-			DefaultExpiration: time.Minute * 10,
-		})
-
-	// init auth service
-	tokenStorage := cache.NewCache[entity.Token](&cache.CacheOpts{
-		Client:            cacheStorage,
-		KeyPrefix:         "auth_token",
-		DefaultExpiration: time.Minute * 30,
-	})
-
-	core.AuthService = service.NewAuthService(tokenStorage, core.UserService)
-
-	return &core
 }
 
 func InitMux() *tcpws.MuxHandler {

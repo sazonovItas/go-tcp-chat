@@ -21,6 +21,3 @@ COPY --from=build-stage /app/chat /app/chat
 COPY --from=build-stage /build/config /app/config
 
 EXPOSE 5050
-
-# TODO: remove cmd for docker-compose
-CMD ["./chat"]

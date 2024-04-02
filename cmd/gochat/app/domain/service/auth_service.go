@@ -3,110 +3,57 @@ package service
 import (
 	"context"
 	"errors"
-	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/repo"
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/internal/hasher"
 )
 
-var (
-	ErrGenerateUUID     = errors.New("failed to generate uuid")
-	ErrTokenNotFound    = errors.New("token not found")
-	ErrMismatchedTokens = errors.New("mismatched tokens")
-)
+var ErrMismatchedTokens = errors.New("mismatched tokens")
 
 // AuthService is interface for managing user's authorization tokens
+// TODO: Divide auth service on auth service and token repo
 type AuthService interface {
-	CreateToken(ctx context.Context, userId int64) (entity.Token, error)
-	SaveToken(ctx context.Context, Token entity.Token, expiration time.Duration) error
-	TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error)
-	UserByTokenId(ctx context.Context, id entity.TokenID) (*entity.User, error)
-	DeleteToken(ctx context.Context, id entity.TokenID) error
-}
-
-// TokenStorage is interface for store session token
-type TokenStorage interface {
-	Set(ctx context.Context, key string, value entity.Token, expiration time.Duration) error
-	Get(ctx context.Context, key string) (entity.Token, error)
-	Delete(ctx context.Context, keys ...string) error
-}
-
-// UserStorage is interface for user storage
-type UserStorage interface {
-	FindById(ctx context.Context, id int64) (*entity.User, error)
+	SignUp(ctx context.Context, authUser *entity.AuthUser) (*entity.User, error)
+	SignIn(ctx context.Context, authUser *entity.AuthUser) (entity.Token, error)
 }
 
 type authService struct {
-	tokenStorage TokenStorage
-	userStorage  UserStorage
+	hasher.Hasher
+	tokenRepository repo.TokenRepository
 }
 
-func NewAuthService(tokenStorage TokenStorage, userStorage UserStorage) AuthService {
+func NewAuthService(tokenRepository repo.TokenRepository) AuthService {
 	return &authService{
-		tokenStorage: tokenStorage,
-		userStorage:  userStorage,
+		tokenRepository: tokenRepository,
+		Hasher:          hasher.New(10),
 	}
 }
 
-func (tr *authService) CreateToken(
+func (aus *authService) SignUp(
 	ctx context.Context,
-	userId int64,
-) (token entity.Token, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = ErrGenerateUUID
-		}
-	}()
-
-	token.ID = entity.TokenID(uuid.New())
-	token.UserId = userId
-
-	return
+	authUser *entity.AuthUser,
+) (*entity.User, error) {
+	return nil, nil
 }
 
-func (tr *authService) Validate(ctx context.Context, authToken entity.Token) error {
-	token, err := tr.TokenById(ctx, authToken.ID)
+func (aus *authService) SignIn(
+	ctx context.Context,
+	authUser *entity.AuthUser,
+) (entity.Token, error) {
+	return entity.Token{}, nil
+}
+
+func (aus *authService) Validate(ctx context.Context, authToken entity.Token) error {
+	tk, err := aus.tokenRepository.TokenById(ctx, authToken.ID)
 	if err != nil {
 		return err
 	}
 
-	if token != authToken {
+	if tk != authToken {
+		// TODO: add deletion of the token
 		return ErrMismatchedTokens
 	}
 
 	return nil
-}
-
-func (tr *authService) SaveToken(
-	ctx context.Context,
-	Token entity.Token,
-	expiration time.Duration,
-) error {
-	return tr.tokenStorage.Set(ctx, Token.ID.String(), Token, expiration)
-}
-
-func (tr *authService) TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error) {
-	return tr.tokenStorage.Get(ctx, id.String())
-}
-
-func (tr *authService) UserByTokenId(
-	ctx context.Context,
-	id entity.TokenID,
-) (*entity.User, error) {
-	tk, err := tr.tokenStorage.Get(ctx, id.String())
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := tr.userStorage.FindById(ctx, tk.UserId)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (tr *authService) DeleteToken(ctx context.Context, id entity.TokenID) error {
-	return tr.tokenStorage.Delete(ctx, id.String())
 }

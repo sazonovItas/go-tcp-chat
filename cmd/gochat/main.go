@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// init application configuration
-	cfg, err := app.InitAppConfig(&app.AppOptions{
+	cfg, err := app.InitAppConfig(&app.Options{
 		Env: configEnv,
 
 		LogWriter: os.Stdout,
