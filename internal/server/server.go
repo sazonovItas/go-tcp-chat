@@ -50,6 +50,7 @@ type Server struct {
 	ln net.Listener
 
 	// conns is storage for active connections
+	mu    sync.Mutex
 	conns map[*gotcpws.Conn]struct{}
 
 	// connwg wait group for waiting until all serving connections are done
@@ -91,7 +92,10 @@ func (srv *Server) ListenAndServe() error {
 		// Serve connection
 		go func() {
 			defer func() {
+				srv.mu.Lock()
 				delete(srv.conns, conn)
+				srv.mu.Unlock()
+
 				srv.connwg.Done()
 				log.Println("closed connection:", conn.RemoteAddr())
 			}()

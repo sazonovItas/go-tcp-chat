@@ -4,9 +4,19 @@
       <div class="v-chat-container-header">
         <button @click="appendMessage">add message</button>
       </div>
-      <div class="v-chat-container-messages"></div>
+      <div class="v-chat-container-messages">
+        <div v-for="(m, idx) in messages" :key="'m-' + idx" style="clear: both">
+          <div :class="{
+          'msg-from-me': m.sender_id == user.id,
+          'msg-from-other': m.from == 'other',
+        }">
+            {{ m.message }}
+          </div>
+        </div>
+      </div>
       <div class="v-chat-container-input">
-        <textarea type="text" wrap="soft" class="send-input" placeholder="Type a message" />
+        <textarea type="text" wrap="soft" class="send-input" placeholder="Type a message" v-model="messageToSend"
+          @keyup.enter="send_message" />
       </div>
     </div>
     <vFooter :host="wssock?.host" :port="wssock?.port" :connected="connection_ready" />
@@ -41,11 +51,13 @@ export default defineComponent({
     wssock.setTimeout(store.state.retryTimeout, () => {
       wssock.connectSocket();
     });
+    const messageToSend = ref("");
 
     return {
       store: store,
       user: user,
       wssock: wssock,
+      messageToSend: messageToSend,
       connection_ready: connection_ready,
       messages: store.state.messages,
     };
@@ -60,16 +72,17 @@ export default defineComponent({
     },
   },
   methods: {
-    appendMessage() {
+    send_message() {
       this.store.commit("appendMessage", {
         guid: "145324140slfhalfhj",
         sender_id: 1,
         convesation_id: 1,
         message_kind: 1,
-        message: "hello",
+        message: this.messageToSend,
         created_at: Date.now(),
         updated_at: Date.now(),
       });
+      this.messageToSend = "";
     },
   },
 });
@@ -89,7 +102,8 @@ export default defineComponent({
   width: 100%;
   height: 100%;
 
-  background: url("../assets/background.webp");
+  background-image: url("../assets/background.webp");
+  background: #152033;
   border-radius: 20px;
 }
 
@@ -105,6 +119,34 @@ export default defineComponent({
 .v-chat-container-messages {
   width: 100%;
   height: 80%;
+
+  overflow-y: scroll;
+  background-size: cover;
+}
+
+.msg-from-me {
+  border-radius: 7.5px;
+  max-width: 65%;
+  font-size: 16px;
+  line-height: 19px;
+  color: #e9edef;
+  background: #046a62;
+  padding: 5px;
+  margin: 20px 20px 5px 0px;
+
+  float: right;
+}
+
+.msg-from-other {
+  border-radius: 7.5px;
+  max-width: 65%;
+  font-size: 16px;
+  line-height: 19px;
+  color: #e9edef;
+  background: fade(#202c33, 90%);
+  padding: 5px;
+  margin: 20px 0px 5px 20px;
+  float: left;
 }
 
 .v-chat-container-input {
