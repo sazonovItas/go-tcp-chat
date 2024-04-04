@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/storage"
@@ -61,17 +61,14 @@ var (
 func (ms *messageRepository) Create(
 	ctx context.Context,
 	msg *entity.Message,
-) (id uuid.UUID, err error) {
+) (uuid.UUID, error) {
 	const op = "gochat.internal.domain.infastructure.datastore.Create"
 
-	defer func() {
-		if r := recover(); r != nil {
-			err = ErrGenerateUUIDFailed
-		}
-	}()
-
 	// Generate new uuid for message
-	id = uuid.New()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return id, ErrGenerateUUIDFailed
+	}
 
 	msg.ID = id
 	result, err := ms.storage.NamedExecContext(
@@ -95,7 +92,7 @@ func (ms *messageRepository) Create(
 		return id, ErrMessageCreateFailed
 	}
 
-	return
+	return id, nil
 }
 
 // GetMessageById returns message by id

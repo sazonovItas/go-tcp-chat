@@ -41,8 +41,9 @@ func (cs *conversationRepository) Create(
 	var id int64
 	err := cs.storage.QueryRowContext(
 		ctx,
-		"INSERT INTO chat.conversations (title, conversation_kind, creator_id) VALUES ($1, $2, $3) RETURNING id",
+		"INSERT INTO chat.conversations (title, color, conversation_kind, creator_id) VALUES ($1, $2, $3, $4) RETURNING id",
 		conversation.Title,
+		conversation.Color,
 		conversation.ConversationKind,
 		conversation.CreatorId,
 	).Scan(&id)
@@ -63,7 +64,7 @@ func (cs *conversationRepository) FindById(
 	var conversation entity.Conversation
 	err := cs.storage.Get(
 		&conversation,
-		"SELECT id, title, conversation_kind, creator_id FROM chat.conversations WHERE id=$1",
+		"SELECT id, title, color, conversation_kind, creator_id FROM chat.conversations WHERE id=$1",
 		id,
 	)
 	if err != nil {
@@ -87,8 +88,9 @@ func (cs *conversationRepository) Update(
 
 	result, err := cs.storage.ExecContext(
 		ctx,
-		"UPDATE chat.users SET title=$1 WHERE id=$2",
+		"UPDATE chat.conversations SET title=$1, color=$2 WHERE id=$3",
 		conversation.Title,
+		conversation.Color,
 		conversation.ID,
 	)
 	if err != nil {

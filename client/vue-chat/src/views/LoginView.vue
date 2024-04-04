@@ -5,13 +5,33 @@
     </div>
 
     <div class="v-auth-form">
-      <input class="v-login-input" type="text" placeholder="login" v-model="login" />
-      <input class="v-login-input" type="password" placeholder="password" v-model="password" />
+      <input
+        class="v-login-input"
+        type="text"
+        placeholder="login"
+        v-model="login"
+      />
+      <input
+        class="v-login-input"
+        type="password"
+        placeholder="password"
+        v-model="password"
+      />
 
       <div class="v-login-wrapper">
         <div class="v-login-host-port">
-          <input class="v-login-input" type="text" placeholder="host" v-model="host" />
-          <input class="v-login-input" type="text" placeholder="port" v-model="port" />
+          <input
+            class="v-login-input"
+            type="text"
+            placeholder="host"
+            v-model="host"
+          />
+          <input
+            class="v-login-input"
+            type="text"
+            placeholder="port"
+            v-model="port"
+          />
         </div>
       </div>
     </div>
@@ -36,7 +56,6 @@ import {
   signInEndpoint,
   ISignInResponse,
 } from "../store/endpoints/endpoints";
-import { User } from "../store/models/user";
 
 const login = ref("");
 const password = ref("");
@@ -55,6 +74,14 @@ export default defineComponent({
       host: host,
       port: port,
     };
+  },
+  mounted() {
+    if (
+      this.store.state.user !== undefined &&
+      this.store.state.token !== undefined
+    ) {
+      this.$router.push("chat");
+    }
   },
   methods: {
     signUp() {
@@ -77,6 +104,8 @@ export default defineComponent({
           ResponseToast.notify(value.status_code, value.status);
           if (successResponse(value)) {
             this.signIn();
+          } else {
+            password.value = "";
           }
         })
         .catch((error) => {
@@ -105,11 +134,19 @@ export default defineComponent({
           if (successResponse(resp)) {
             try {
               const value: ISignInResponse = JSON.parse(resp.body);
-              this.store.state.user = new User(value.auth_token, value.user);
+              this.store.commit("setChatAppData", {
+                host: host.value,
+                port: port.value,
+                user: value.user,
+                token: value.auth_token,
+              });
+              this.$router.push("chat");
               NotifySystem.notify("success", `Welcom ${value.user.name}`);
             } catch (e) {
               NotifySystem.notify("error", "error parse json");
             }
+          } else {
+            password.value = "";
           }
         })
         .catch((error) => {

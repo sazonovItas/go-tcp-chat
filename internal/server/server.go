@@ -94,7 +94,6 @@ func (srv *Server) ListenAndServe() error {
 				delete(srv.conns, conn)
 				srv.connwg.Done()
 				log.Println("closed connection:", conn.RemoteAddr())
-				conn.Close()
 			}()
 
 			srv.conns[conn] = struct{}{}

@@ -62,6 +62,7 @@ export async function Request(
     sock.connectSocket();
   } catch (e) {
     console.log("error connect to the server");
+    sock.closeSocket();
     return resp;
   }
 

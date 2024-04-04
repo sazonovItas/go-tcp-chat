@@ -9,6 +9,7 @@ export default class WSSocket {
   public host: string;
   public port: number;
   public connected: boolean;
+  public try_connecting: boolean;
 
   private timeout?: NodeJS.Timeout;
   private buf: Buffer;
@@ -18,11 +19,13 @@ export default class WSSocket {
     port: number,
     onConnect?: () => void,
     onData?: (data: Buffer) => void,
+    onClose?: () => void,
     onError?: (err: Error) => void
   ) {
     this.port = port;
     this.host = host;
     this.connected = false;
+    this.try_connecting = false;
     this.timeout = undefined;
     this.buf = Buffer.alloc(0);
 
@@ -51,7 +54,9 @@ export default class WSSocket {
     }
     if (onError !== undefined) {
       this.onError = onError;
-      this.connected = false;
+    }
+    if (onClose !== undefined) {
+      this.onClose = onClose;
     }
   }
 
@@ -60,29 +65,33 @@ export default class WSSocket {
       this.socket = new net.Socket();
 
       this.connected = false;
-      this.socket.on("connect", this.onConnect);
+      this.socket.on("connect", () => {
+        this.connected = true;
+        this.try_connecting = false;
+        this.onConnect();
+      });
       this.socket.on("data", this.onData);
       this.socket.on("error", this.onError);
       this.socket.on("drain", () => {
         this.socket?.resume();
       });
       this.socket.on("close", () => {
+        this.onClose();
         this.connected = false;
-        console.log("connection is closed");
+        console.log("connection close");
       });
     }
 
-    if (this.connected || this.socket?.connecting) {
+    if (this.connected || this.socket?.connecting || this.try_connecting) {
       return;
     }
 
     try {
-      this.connected = true;
       this.socket?.connect(this.port, this.host);
+      this.try_connecting = true;
     } catch (e) {
       console.log(e);
-      this.connected = false;
-      throw e;
+      this.try_connecting = false;
     }
   }
 
@@ -170,6 +179,9 @@ export default class WSSocket {
   };
   private onError: (err: Error) => void = (err: Error) => {
     console.log(err);
+  };
+  private onClose: () => void = () => {
+    this.connected = false;
   };
 
   private marshalFrame(

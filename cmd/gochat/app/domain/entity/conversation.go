@@ -13,6 +13,7 @@ const (
 type Conversation struct {
 	ID               int64            `db:"id"                json:"id"`
 	Title            string           `db:"title"             json:"title"`
+	Color            string           `db:"color"             json:"color"`
 	ConversationKind ConversationKind `db:"conversation_kind" json:"conversation_kind"`
 	CreatorId        int64            `db:"creator_id"        json:"creator_id"`
 }

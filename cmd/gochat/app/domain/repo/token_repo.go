@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 
 	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 )
@@ -51,13 +51,12 @@ func (tr *tokenRepository) CreateToken(
 	ctx context.Context,
 	userId int64,
 ) (token entity.Token, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = ErrGenerateUUID
-		}
-	}()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return token, ErrGenerateUUID
+	}
 
-	token.ID = entity.TokenID(uuid.New().String())
+	token.ID = entity.TokenID(id.String())
 	token.UserId = userId
 	return
 }

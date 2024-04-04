@@ -27,6 +27,7 @@
     "net": "^1.0.2",
     "os": "^0.1.2",
     "path": "^0.12.7",
+    "primevue": "^3.50.0",
     "quasar": "^2.0.0",
     "sass-loader": "^14.1.1",
     "timers": "^0.1.1",
@@ -35,7 +36,8 @@
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
     "vue3-toastify": "^0.2.1",
-    "vuex": "^4.0.0"
+    "vuex": "^4.0.0",
+    "vuex-persistedstate": "^4.1.0"
   },
   "devDependencies": {
     "@types/electron-devtools-installer": "^2.2.0",

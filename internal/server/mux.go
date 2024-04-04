@@ -1,6 +1,8 @@
 package tcpws
 
 import (
+	"log"
+
 	gotcpws "github.com/sazonovItas/go-tcpws"
 )
 
@@ -65,13 +67,17 @@ func (mh *MuxHandler) HandleFunc(method, url string, handler HandlerFunc) {
 // Serve connection and call handlers for serving
 // TODO: Add logger for serving new connection
 func (mh *MuxHandler) Serve(conn *gotcpws.Conn) {
+	defer conn.Close()
+
 	req, err := conn.ReadFrame()
 	if err != nil {
+		log.Printf("error to read frame: %s", err.Error())
 		return
 	}
 
 	request, err := newRequest(req)
 	if err != nil {
+		log.Printf("error to create new request: %s", err.Error())
 		return
 	}
 	response := newResponse(conn)

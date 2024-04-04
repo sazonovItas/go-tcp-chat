@@ -1,23 +1,58 @@
-import WSSocket from "@/lib/socket/wssocket";
 import { createStore, Store } from "vuex";
-import { User } from "./models/user";
+import { IUser } from "./models/user";
+import { IToken } from "./models/token";
+import { IMessage } from "./models/message";
+import createPersistedState from "vuex-persistedstate";
 
 export interface IState {
   requestTimeout: number;
-  user: User | undefined;
-  conn: WSSocket | undefined;
+  user: IUser | undefined;
+  token: IToken | undefined;
+  messages: Array<IMessage>;
+  host: string;
+  port: number;
 }
 
 const store: Store<IState> = createStore({
+  plugins: [
+    createPersistedState({
+      getState: (key) => {
+        const obj = localStorage.getItem(key);
+        if (obj) {
+          return JSON.parse(obj);
+        }
+        return null;
+      },
+      setState: (key, state) =>
+        localStorage.setItem(key, JSON.stringify(state)),
+    }),
+  ],
   state() {
     return {
       requestTimeout: 2000,
+      retryTimeout: 5000,
       user: undefined,
-      conn: undefined,
+      token: undefined,
+      messages: new Array<IMessage>(),
+      host: "",
+      port: 0,
     };
   },
   getters: {},
-  mutations: {},
+  mutations: {
+    setChatAppData(state, payload) {
+      state.user = payload.user;
+      state.token = payload.token;
+      state.host = payload.host;
+      state.port = payload.port;
+    },
+    appendMessage(state, payload) {
+      state.messages?.push(payload);
+    },
+    updateMessages(state, payload) {
+      state.messages = payload.messages;
+    },
+  },
   actions: {},
   modules: {},
 });

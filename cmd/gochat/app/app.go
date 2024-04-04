@@ -73,7 +73,7 @@ func (app *Application) Run() error {
 		app.Logger.Info("server stopped")
 	}()
 
-	app.Logger.Info("server start running")
+	app.Logger.Info("server start running", "address", app.listenAddr)
 	return tcpws.ListenAndServe(app.listenAddr, app.mux)
 }
 

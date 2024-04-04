@@ -17,6 +17,7 @@ var (
 	SuccessfulSignIn = "successful sign in"
 )
 
+// /api/v1/signup
 func (api *Api) SignUp(resp *tcpws.Response, req *tcpws.Request) {
 	const op = "gochat.app.api.auth.SignUp"
 
@@ -63,6 +64,7 @@ func (api *Api) SignUp(resp *tcpws.Response, req *tcpws.Request) {
 	resp.Status = SuccessfulSignUp
 }
 
+// /api/v1/signup
 func (api *Api) SignIn(resp *tcpws.Response, req *tcpws.Request) {
 	const op = "gochat.app.api.auth.SignIn"
 
