@@ -14,6 +14,82 @@ export default class WSSocket {
   private timeout?: NodeJS.Timeout;
   private buf: Buffer;
 
+  public onData: (data: Buffer) => void = (data: Buffer) => {
+    console.log(data.toString());
+  };
+  public onConnect: () => void = () => {
+    this.connected = true;
+    this.try_connecting = false;
+  };
+  public onError: (err: Error) => void = (err: Error) => {
+    console.log(err);
+  };
+  public onClose: () => void = () => {
+    this.connected = false;
+  };
+
+  public setOnConnect(onConnect: () => void) {
+    this.onConnect = onConnect;
+    const connectHandler = () => {
+      this.connected = true;
+      this.try_connecting = false;
+      console.log("connection is established");
+      onConnect();
+    };
+
+    this.socket?.removeAllListeners("connect");
+    this.socket?.on("connect", connectHandler);
+  }
+
+  public setOnData(onData: (data: Buffer) => void) {
+    this.onData = onData;
+    const dataHandler = (data: Buffer) => {
+      this.buf = Buffer.concat([this.buf, data]);
+
+      const msg = this.unmarshalFrame(this.buf);
+      if (msg[0] === undefined) {
+        if (msg[1] == 0) {
+          return;
+        }
+
+        this.closeSocket();
+        return;
+      }
+
+      this.buf = this.buf.subarray(msg[1]);
+      if (msg[0] !== undefined) {
+        onData(msg[0]!);
+      }
+    };
+
+    this.socket?.removeAllListeners("data");
+    this.socket?.on("data", dataHandler);
+  }
+
+  public setOnClose(onClose: () => void) {
+    this.onClose = onClose;
+    const closeHandler = () => {
+      onClose();
+      console.log("connection is closed");
+      this.connected = false;
+      this.try_connecting = false;
+      this.socket?.destroy();
+      this.socket = undefined;
+    };
+
+    this.socket?.removeAllListeners("close");
+    this.socket?.on("close", closeHandler);
+  }
+  public setOnError(onError: (e: Error) => void) {
+    this.onError = onError;
+    const errorHandler = (e: Error) => {
+      onError(e);
+    };
+
+    this.socket?.removeAllListeners("error");
+    this.socket?.on("error", errorHandler);
+  }
+
   constructor(
     host: string,
     port: number,
@@ -33,24 +109,7 @@ export default class WSSocket {
       this.onConnect = onConnect;
     }
     if (onData !== undefined) {
-      this.onData = (data: Buffer) => {
-        this.buf = Buffer.concat([this.buf, data]);
-
-        const msg = this.unmarshalFrame(this.buf);
-        if (msg[0] === undefined) {
-          if (msg[1] == 0) {
-            return;
-          }
-
-          this.closeSocket();
-          return;
-        }
-
-        this.buf = this.buf.subarray(msg[1]);
-        if (msg[0] !== undefined) {
-          onData(msg[0]!);
-        }
-      };
+      this.onData = onData;
     }
     if (onError !== undefined) {
       this.onError = onError;
@@ -63,24 +122,18 @@ export default class WSSocket {
   public connectSocket() {
     if (!this.socket) {
       this.socket = new net.Socket();
-
       this.connected = false;
-      this.socket.on("connect", () => {
-        this.connected = true;
-        this.try_connecting = false;
-        this.onConnect();
-      });
-      this.socket.on("data", this.onData);
-      this.socket.on("error", this.onError);
-      this.socket.on("drain", () => {
-        this.socket?.resume();
-      });
-      this.socket.on("close", () => {
-        this.onClose();
-        this.connected = false;
-        console.log("connection close");
-      });
     }
+
+    this.setOnConnect(this.onConnect);
+    this.setOnData(this.onData);
+    this.setOnClose(this.onClose);
+    this.setOnError(this.onError);
+
+    this.socket.removeAllListeners("drain");
+    this.socket.on("drain", () => {
+      this.socket?.resume();
+    });
 
     if (this.connected || this.socket?.connecting || this.try_connecting) {
       return;
@@ -90,8 +143,8 @@ export default class WSSocket {
       this.socket?.connect(this.port, this.host);
       this.try_connecting = true;
     } catch (e) {
-      console.log(e);
       this.try_connecting = false;
+      throw e;
     }
   }
 
@@ -165,24 +218,6 @@ export default class WSSocket {
       return this.socket.remotePort;
     }
   }
-
-  private onData: (data: Buffer) => void = (data: Buffer) => {
-    const msg = this.unmarshalFrame(data);
-    if (msg === undefined) {
-      this.closeSocket();
-    }
-    console.log(msg);
-  };
-  private onConnect: () => void = () => {
-    this.connected = true;
-    console.log("connection is established");
-  };
-  private onError: (err: Error) => void = (err: Error) => {
-    console.log(err);
-  };
-  private onClose: () => void = () => {
-    this.connected = false;
-  };
 
   private marshalFrame(
     data: Buffer,

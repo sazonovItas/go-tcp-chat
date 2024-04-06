@@ -4,8 +4,8 @@ export interface IMessage {
   conversation_id: number;
   message_kind: number;
   message: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export const CreateConversationMessage = 0;

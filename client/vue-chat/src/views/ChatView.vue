@@ -1,16 +1,22 @@
 <template>
   <div class="v-chat-wrapper">
     <div class="v-chat-container">
-      <div class="v-chat-container-header">
-        <button @click="appendMessage">add message</button>
-      </div>
+      <div class="v-chat-container-header"></div>
       <div class="v-chat-container-messages">
         <div v-for="(m, idx) in messages" :key="'m-' + idx" style="clear: both">
           <div :class="{
-          'msg-from-me': m.sender_id == user.id,
-          'msg-from-other': m.from == 'other',
+          'msg-from-me': m.sender_id === user.id,
+          'msg-from-other': m.sender_id !== user.id,
         }">
-            {{ m.message }}
+            <div :style="{ color: user.color, margin: '0 0 5px 0' }">
+              {{ user.name }}
+            </div>
+            <div>
+              {{ m.message }}
+            </div>
+            <div :style="{ color: '#bbbbbb', margin: '5px 0 0 0' }">
+              {{ m.created_at }}
+            </div>
           </div>
         </div>
       </div>
@@ -19,7 +25,7 @@
           @keyup.enter="send_message" />
       </div>
     </div>
-    <vFooter :host="wssock?.host" :port="wssock?.port" :connected="connection_ready" />
+    <vFooter :host="store.state.host" :port="store.state.port" :connected="connection_ready" />
   </div>
 </template>
 
@@ -30,28 +36,18 @@ import { useStore } from "vuex";
 import vFooter from "../components/layouts/v-footer.vue";
 
 import WSsocket from "../lib/socket/wssocket";
+import { Connect } from "../lib/reqresp-conn/retry_conn";
+import { ResponseToast, NotifySystem } from "../lib/toasts/notifications";
+import { successResponse } from "../lib/reqresp-conn/reqresp";
 
 export default defineComponent({
   setup() {
     const store = useStore();
     const user = store.state.user;
     const connection_ready = ref(false);
-    const wssock = new WSsocket(
-      store.state.host,
-      store.state.port,
-      () => {
-        connection_ready.value = true;
-      },
-      undefined,
-      () => {
-        connection_ready.value = false;
-      }
-    );
-    wssock.connectSocket();
-    wssock.setTimeout(store.state.retryTimeout, () => {
-      wssock.connectSocket();
-    });
     const messageToSend = ref("");
+
+    const wssock = new WSsocket(store.state.host, store.state.port);
 
     return {
       store: store,
@@ -62,27 +58,76 @@ export default defineComponent({
       messages: store.state.messages,
     };
   },
+  mounted() {
+    this.try_connect();
+    const retryConnection = () => {
+      this.try_connect();
+      setTimeout(() => {
+        retryConnection();
+      }, this.store.state.retryTimeout);
+    };
+    setTimeout(() => {
+      retryConnection();
+    }, this.store.state.retryTimeout);
+  },
   components: {
     vFooter,
   },
-  watch: {},
-  computed: {
-    connectedSock(): boolean {
-      return this.wssock?.connected;
-    },
-  },
   methods: {
     send_message() {
+      if (this.messageToSend.trim() === "") {
+        return;
+      }
+
       this.store.commit("appendMessage", {
-        guid: "145324140slfhalfhj",
-        sender_id: 1,
+        guid: "guid-12345",
+        sender_id: 2,
         convesation_id: 1,
         message_kind: 1,
-        message: this.messageToSend,
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        message: this.messageToSend.trim(),
+        created_at: new Date(Date.now()).toUTCString(),
+        updated_at: new Date(Date.now()).toUTCString(),
       });
       this.messageToSend = "";
+    },
+    try_connect() {
+      if (this.wssock?.try_connecting || this.wssock?.connected) {
+        return;
+      }
+      this.connection_ready = false;
+
+      Connect(
+        this.wssock,
+        this.store.state.retryTimeout,
+
+        () => {
+          this.connection_ready = true;
+        },
+        (data: Buffer) => {
+          try {
+            const msg = JSON.parse(data.toString());
+            NotifySystem.notify("info", msg);
+          } catch (e) {
+            console.log(e);
+          }
+        },
+        () => {
+          this.connection_ready = false;
+        },
+        (e: Error) => {
+          NotifySystem.notify("error", e.toString());
+        }
+      )
+        .then((value) => {
+          ResponseToast.notify(value.status_code, value.status);
+
+          if (successResponse(value)) {
+            this.connection_ready = true;
+          }
+        })
+        .catch((e) => {
+          console.log(e);
+        });
     },
   },
 });
@@ -100,9 +145,8 @@ export default defineComponent({
 
 .v-chat-container {
   width: 100%;
-  height: 100%;
+  height: 98%;
 
-  background-image: url("../assets/background.webp");
   background: #152033;
   border-radius: 20px;
 }
@@ -111,42 +155,50 @@ export default defineComponent({
   background: #202c33;
 
   width: 100%;
-  height: 12%;
+  height: 8%;
 
   border-radius: 15px;
 }
 
 .v-chat-container-messages {
+  margin: 10px 0 10px 0;
+
   width: 100%;
   height: 80%;
 
   overflow-y: scroll;
+  overflow-x: hidden;
   background-size: cover;
 }
 
 .msg-from-me {
   border-radius: 7.5px;
-  max-width: 65%;
+  max-width: 50%;
   font-size: 16px;
   line-height: 19px;
   color: #e9edef;
   background: #046a62;
   padding: 5px;
-  margin: 20px 20px 5px 0px;
-
+  margin: 20px 20px 10px 0px;
   float: right;
+
+  word-wrap: break-word;
 }
 
 .msg-from-other {
+  padding: 15px;
+
   border-radius: 7.5px;
-  max-width: 65%;
+  max-width: 50%;
   font-size: 16px;
   line-height: 19px;
   color: #e9edef;
-  background: fade(#202c33, 90%);
+  background: #202c33;
   padding: 5px;
-  margin: 20px 0px 5px 20px;
+  margin: 20px 0px 10px 20px;
   float: left;
+
+  word-wrap: break-word;
 }
 
 .v-chat-container-input {
@@ -169,6 +221,26 @@ export default defineComponent({
   flex-grow: 1;
 
   color: white;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #202c33;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #2a3942;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .v-footer {

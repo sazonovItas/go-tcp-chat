@@ -23,11 +23,6 @@ export async function Request(
     host,
     port,
     () => {
-      console.log(
-        "connection established",
-        sock.getRemoteAddress(),
-        sock.getRemotePort()
-      );
       try {
         sock.socketSend(JSON.stringify(req), 0x1, true);
       } catch (e) {
@@ -48,6 +43,8 @@ export async function Request(
   );
 
   setTimeout(() => {
+    if (!received) return;
+
     try {
       sock.closeSocket();
     } catch (e) {
