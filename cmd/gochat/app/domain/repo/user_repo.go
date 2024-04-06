@@ -11,14 +11,32 @@ import (
 )
 
 type UserRepository interface {
+	// Create creates new user and returns it's id
+	// Errors: unknown
 	Create(ctx context.Context, user *entity.User) (int64, error)
+
+	// FindById returns user by id
+	// Errors: ErrUserNotFound, unknown
 	FindById(ctx context.Context, id int64) (*entity.User, error)
+
+	// FindByLogin returns user by login
+	// Errors: ErrUserNotFound, unknown
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
+
+	// Update updates user by id
+	// Errors: ErrUserUpdateFailed
 	Update(ctx context.Context, user *entity.User) error
+
+	// Delete deletes user by id
+	// Errors: ErrUserDeleteFailed
 	Delete(ctx context.Context, id int64) error
 
+	// GetIdByLogin returns user id by login
 	GetIdByLogin(ctx context.Context, login string) int64
-	GetPublicUsersByConvId(ctx context.Context, convId int64) ([]entity.PublicUser, error)
+
+	// GetPublicUsersByConvId returns public users
+	// Errors: unknown
+	GetPublicUsers(ctx context.Context) ([]entity.PublicUser, error)
 }
 
 type userRepository struct {
@@ -101,12 +119,12 @@ func (us *userRepository) FindByLogin(ctx context.Context, login string) (*entit
 	return &user, nil
 }
 
-// UpdateUser updates user's data
+// Update is implementing interface UserRepository
 func (us *userRepository) Update(
 	ctx context.Context,
 	user *entity.User,
 ) error {
-	const op = "gochat.internal.domain.infastructure.datastore.user.Update"
+	const op = "gochat.internal.domain.repo.user_repo.Update"
 
 	result, err := us.storage.ExecContext(
 		ctx,
@@ -131,9 +149,9 @@ func (us *userRepository) Update(
 	return nil
 }
 
-// Delete deletes user byid
+// Delete is implementing interface UserRepository
 func (us *userRepository) Delete(ctx context.Context, id int64) error {
-	const op = "gochat.internal.domain.infastructure.datastore.user.Delete"
+	const op = "gochat.internal.domain.repo.user_repo.Delete"
 
 	result, err := us.storage.ExecContext(ctx, "DELETE FROM chat.users WHERE id=$1", id)
 	if err != nil {
@@ -152,7 +170,7 @@ func (us *userRepository) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// GetUserId returns user ID or 0 if user does not exists
+// GetIdByLogin is implementing interface UserRepository
 func (us *userRepository) GetIdByLogin(ctx context.Context, login string) int64 {
 	var id int64
 
@@ -164,25 +182,20 @@ func (us *userRepository) GetIdByLogin(ctx context.Context, login string) int64 
 	return id
 }
 
-func (us *userRepository) GetPublicUsersByConvId(
+// GetPublicUsers is implementing interface UserRepository
+func (us *userRepository) GetPublicUsers(
 	ctx context.Context,
-	convId int64,
 ) ([]entity.PublicUser, error) {
-	const op = "gochat.internal.domain.infastructure.datastore.user.GetPublicUsersByConvId"
+	const op = "gochat.internal.domain.repo.user_repo.GetPublicUsers"
 
 	var users []entity.PublicUser
 	err := us.storage.SelectContext(
 		ctx,
 		&users,
 		`
-    WITH (
-      SELECT user_id FROM chat.participants WHERE conversation_id=$1
-    ) AS users_ids
-    SELECT U.id, U.login, U.name, U.color 
-    FROM chat.users AS U
-      JOIN users_ids AS UID ON U.id=UID.user_id
+      SELECT id, login, name, color FROM chat.users
     `,
-		convId)
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

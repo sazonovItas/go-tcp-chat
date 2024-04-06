@@ -54,6 +54,7 @@ import { validatePassword, validateLogin } from "../lib/utils/validation";
 import {
   signUpEndpoint,
   signInEndpoint,
+  signInByTokenEndpoint,
   ISignInResponse,
 } from "../store/endpoints/endpoints";
 
@@ -78,9 +79,11 @@ export default defineComponent({
   mounted() {
     if (
       this.store.state.user !== undefined &&
-      this.store.state.token !== undefined
+      this.store.state.token !== undefined &&
+      this.store.state.host !== undefined &&
+      this.store.state.port !== undefined
     ) {
-      this.$router.push("chat");
+      this.SignInByToken();
     }
   },
   methods: {
@@ -147,6 +150,46 @@ export default defineComponent({
             }
           } else {
             password.value = "";
+          }
+        })
+        .catch((error) => {
+          NotifySystem.notify("error", error);
+        });
+    },
+    SignInByToken() {
+      Request(
+        this.store.state.host,
+        this.store.state.port,
+        this.store.state.requestTimeout,
+        {
+          method: "POST",
+          url: signInByTokenEndpoint,
+          proto: "http",
+
+          header: new TSMap([["Content-Type", "application/json"]]),
+          body: JSON.stringify(this.store.state.token),
+        }
+      )
+        .then((resp: IResponse) => {
+          ResponseToast.notify(resp.status_code, resp.status);
+
+          if (successResponse(resp)) {
+            try {
+              const value: ISignInResponse = JSON.parse(resp.body);
+              this.store.commit("setChatAppData", {
+                host: this.store.state.host,
+                port: this.store.state.port,
+                user: value,
+                token: this.store.state.token,
+              });
+              this.$router.push("chat");
+              NotifySystem.notify("success", `Welcom ${value.user.name}`);
+            } catch (e) {
+              NotifySystem.notify("error", "error parse json");
+            }
+          } else {
+            password.value = "";
+            this.store.commit("logOut");
           }
         })
         .catch((error) => {

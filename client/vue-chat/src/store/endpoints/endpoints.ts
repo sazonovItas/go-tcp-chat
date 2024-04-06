@@ -23,4 +23,5 @@ export interface ISignInResponse {
 //    }
 // }
 
+export const signInByTokenEndpoint = "/api/v1/signin/token";
 export const chattingEndpoint = "/api/v1/chatting";

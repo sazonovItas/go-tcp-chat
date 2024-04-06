@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS messages (
   message           VARCHAR(1024)   NOT NULL,
   created_at        timestamptz     NOT NULL  DEFAULT NOW(),
   PRIMARY KEY (id),
-  FOREIGN KEY (sender_id) REFERENCES users (id),
+  FOREIGN KEY (sender_id) REFERENCES users (id)
 );
 
 CREATE TRIGGER updated_at_messages_trgr

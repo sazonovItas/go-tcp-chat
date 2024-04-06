@@ -16,10 +16,24 @@ var (
 )
 
 type TokenRepository interface {
+	// CreateToken returns new token
+	// Errors: ErrGenerateUUID, unknown
 	CreateToken(ctx context.Context, userId int64) (entity.Token, error)
+
+	// SaveToken saves token
+	// Errors: unknown
 	SaveToken(ctx context.Context, Token entity.Token, expiration time.Duration) error
+
+	// TokenById returns token by id
+	// Errors: ErrTokenNotFound
 	TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error)
+
+	// UserByTokenId return user by token
+	// Errors: ErrUserNotFound
 	UserByTokenId(ctx context.Context, id entity.TokenID) (*entity.User, error)
+
+	// DeleteToken deletes token by id
+	// Errors: unknown
 	DeleteToken(ctx context.Context, id entity.TokenID) error
 }
 
@@ -47,6 +61,7 @@ func NewTokenRepository(tokenStorage TokenStorage, userStorage UserStorage) Toke
 	}
 }
 
+// CreateToken is implementing interface TokenRepository
 func (tr *tokenRepository) CreateToken(
 	ctx context.Context,
 	userId int64,
@@ -61,6 +76,7 @@ func (tr *tokenRepository) CreateToken(
 	return
 }
 
+// SaveToken is implementing interface TokenRepository
 func (tr *tokenRepository) SaveToken(
 	ctx context.Context,
 	Token entity.Token,
@@ -69,10 +85,12 @@ func (tr *tokenRepository) SaveToken(
 	return tr.tokenStorage.Set(ctx, Token.ID.String(), Token, expiration)
 }
 
+// TokenById is implementing interface TokenRepository
 func (tr *tokenRepository) TokenById(ctx context.Context, id entity.TokenID) (entity.Token, error) {
 	return tr.tokenStorage.Get(ctx, id.String())
 }
 
+// UserByTokenId is implementing interface TokenRepository
 func (tr *tokenRepository) UserByTokenId(
 	ctx context.Context,
 	id entity.TokenID,
@@ -90,6 +108,7 @@ func (tr *tokenRepository) UserByTokenId(
 	return user, nil
 }
 
+// UserByTokenId is implementing interface TokenRepository
 func (tr *tokenRepository) DeleteToken(ctx context.Context, id entity.TokenID) error {
 	return tr.tokenStorage.Delete(ctx, id.String())
 }

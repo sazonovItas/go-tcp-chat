@@ -14,28 +14,42 @@ import (
 )
 
 type MessageRepository interface {
+	// Create creates new message and returns it's id
+	// Errors: ErrGenerateUUIDFailed, ErrMessageCreateFailed, unknown
 	Create(ctx context.Context, msg *entity.Message) (uuid.UUID, error)
+
+	// FindById finds message by id
+	// Errors: ErrMessageNotFound, unknown
 	FindById(ctx context.Context, id uuid.UUID) (*entity.Message, error)
+
+	// Update updates message by id
+	// Errors: ErrMessageUpdateFailed, unknown
 	Update(ctx context.Context, message *entity.Message) error
+
+	// Delete deletes message by id
+	// Errors: ErrMessageDeleteFailed, unknown
 	Delete(ctx context.Context, id uuid.UUID) error
 
+	// GetConvMessagesPrevTimestamp returns limits count of messages previous to timestamp
+	// Errors: ErrNoMessages, unknown
 	GetConvMessagesPrevTimestamp(
 		ctx context.Context,
-		convId int64,
 		timestamp time.Time,
 		limit int,
 	) ([]entity.Message, error)
 
+	// GetConvMessagesNextTimestamp returns limits count of messages next to timestamp
+	// Errors: ErrNoMessages, unknown
 	GetConvMessagesNextTimestamp(
 		ctx context.Context,
-		convId int64,
 		timestamp time.Time,
 		limit int,
 	) ([]entity.Message, error)
 
+	// GetConvMessagesBetweenTimestamp returns limits count of messages next to timestamp
+	// Errors: ErrNoMessages, unknown
 	GetConvMessagesBetweenTimestamp(
 		ctx context.Context,
-		convId int64,
 		from, to time.Time,
 	) ([]entity.Message, error)
 }
@@ -49,15 +63,15 @@ func NewMessageRepository(db *storage.Storage) MessageRepository {
 }
 
 var (
-	ErrGenerateUUIDFailed          = errors.New("failed generate uuid")
-	ErrMessageCreateFailed         = errors.New("failed create message")
-	ErrMessageUpdateFailed         = errors.New("failed update message")
-	ErrMessageNotFound             = errors.New("message not found")
-	ErrNoNewMessagesInConversation = errors.New("no new messages in conversation")
-	ErrMessageDeleteFailed         = errors.New("failed to delete message")
+	ErrGenerateUUIDFailed  = errors.New("failed generate uuid")
+	ErrMessageCreateFailed = errors.New("failed create message")
+	ErrMessageUpdateFailed = errors.New("failed update message")
+	ErrMessageNotFound     = errors.New("message not found")
+	ErrNoMessages          = errors.New("no messages")
+	ErrMessageDeleteFailed = errors.New("failed to delete message")
 )
 
-// CreateMessage creates new message and returns it's id
+// Create is implementing interface MessageRepository
 func (ms *messageRepository) Create(
 	ctx context.Context,
 	msg *entity.Message,
@@ -74,8 +88,8 @@ func (ms *messageRepository) Create(
 	result, err := ms.storage.NamedExecContext(
 		ctx,
 		`
-    INSERT INTO chat.messages (id, sender_id, conversation_id, message_kind, message, created_at, updated_at)
-    VALUES (:id, :sender_id, :conversation_id, :message_kind, :message, :created_at, :updated_at)
+    INSERT INTO chat.messages (id, sender_id, message_kind, message, created_at, updated_at)
+    VALUES (:id, :sender_id, :message_kind, :message, :created_at, :updated_at)
     `,
 		msg,
 	)
@@ -95,7 +109,7 @@ func (ms *messageRepository) Create(
 	return id, nil
 }
 
-// GetMessageById returns message by id
+// FindById is implementing interface MessageRepository
 func (ms *messageRepository) FindById(
 	ctx context.Context,
 	id uuid.UUID,
@@ -120,7 +134,7 @@ func (ms *messageRepository) FindById(
 	return &msg, nil
 }
 
-// UpdateMessage updates message
+// Update is implementing interface MessageRepository
 func (ms *messageRepository) Update(ctx context.Context, message *entity.Message) error {
 	const op = "gochat.internal.domain.infastructure.datastore.message.Update"
 
@@ -147,7 +161,7 @@ func (ms *messageRepository) Update(ctx context.Context, message *entity.Message
 	return nil
 }
 
-// DeleteMessageId deletes message by id
+// Delete is implementing interface MessageRepository
 func (ms *messageRepository) Delete(
 	ctx context.Context,
 	id uuid.UUID,
@@ -175,11 +189,9 @@ func (ms *messageRepository) Delete(
 	return nil
 }
 
-// GetConvMessagesPrevTimestamp returns limit or less messages
-// previous to timestamp from conversation with id equals to convId
+// GetConvMessagesPrevTimestamp is implementing MessageRepository interface
 func (ms *messageRepository) GetConvMessagesPrevTimestamp(
 	ctx context.Context,
-	convId int64,
 	timestamp time.Time,
 	limit int,
 ) ([]entity.Message, error) {
@@ -191,22 +203,21 @@ func (ms *messageRepository) GetConvMessagesPrevTimestamp(
 		&messages,
 		`
     WITH ready_messages AS (
-     SELECT id, sender_id, conversation_id, message_kind, message, created_at 
+     SELECT id, sender_id, message_kind, message, created_at 
      FROM chat.messages 
-     WHERE conversation_id=$1 AND created_at<$2 
+     WHERE created_at<$1 
 		 ORDER BY created_at DESC
-     LIMIT $3
+     LIMIT $2
     )
     SELECT * FROM ready_messages ORDER BY created_at ASC
     `,
-		convId,
 		timestamp,
 		limit,
 	)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrNoNewMessagesInConversation
+			return nil, ErrNoMessages
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -215,11 +226,9 @@ func (ms *messageRepository) GetConvMessagesPrevTimestamp(
 	return messages, nil
 }
 
-// GetConvMessagesNextTimestamp returns limit or less messages
-// next to timestamp from conversation with id equals to convId
+// GetConvMessagesNextTimestamp is implementing interface MessageRepository
 func (ms *messageRepository) GetConvMessagesNextTimestamp(
 	ctx context.Context,
-	convId int64,
 	timestamp time.Time,
 	limit int,
 ) ([]entity.Message, error) {
@@ -229,20 +238,19 @@ func (ms *messageRepository) GetConvMessagesNextTimestamp(
 	err := ms.storage.SelectContext(ctx,
 		&messages,
 		`
-    SELECT id, sender_id, conversation_id, message_kind, message, created_at 
+    SELECT id, sender_id, message_kind, message, created_at 
     FROM chat.messages 
-    WHERE conversation_id=$1 AND created_at>$2 
+    WHERE created_at>$1 
 		ORDER BY created_at ASC
-    LIMIT $3
+    LIMIT $2
     `,
-		convId,
 		timestamp,
 		limit,
 	)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrNoNewMessagesInConversation
+			return nil, ErrNoMessages
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -251,9 +259,9 @@ func (ms *messageRepository) GetConvMessagesNextTimestamp(
 	return messages, nil
 }
 
+// GetConvMessagesBetweenTimestamp is implementing interface MessageRepository
 func (ms *messageRepository) GetConvMessagesBetweenTimestamp(
 	ctx context.Context,
-	convId int64,
 	from, to time.Time,
 ) ([]entity.Message, error) {
 	const op = "gochat.internal.domain.infastructure.datastore.message.GetConvMessagesBetweenTimestamp"
@@ -263,7 +271,7 @@ func (ms *messageRepository) GetConvMessagesBetweenTimestamp(
 		ctx,
 		&messages,
 		`
-    SELECT id, sender_id, conversation_id, message_kind, message, created_at 
+    SELECT id, sender_id, message_kind, message, created_at 
     FROM chat.messages 
     WHERE created_at BETWEEN $1 and $2
 		ORDER BY created_at ASC
@@ -273,7 +281,7 @@ func (ms *messageRepository) GetConvMessagesBetweenTimestamp(
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrNoNewMessagesInConversation
+			return nil, ErrNoMessages
 		default:
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}

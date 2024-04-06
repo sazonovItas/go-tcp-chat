@@ -222,12 +222,12 @@ export default defineComponent({
 
       try {
         this.wssock.closeSocket();
-        this.connection_ready = false;
-        this.wssock = undefined;
       } catch (e) {
         console.log(e);
       }
 
+      this.connection_ready = false;
+      this.wssock = undefined;
       this.$router.push("/");
     },
   },

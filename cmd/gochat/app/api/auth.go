@@ -105,12 +105,12 @@ func (api *Api) SignIn(resp *tcpws.Response, req *tcpws.Request) {
 		return
 	}
 
-	type responseData struct {
+	type AuthData struct {
 		AuthToken entity.Token `json:"auth_token"`
 		User      entity.User  `json:"user"`
 	}
 
-	data, err := json.Marshal(responseData{
+	response, err := json.Marshal(AuthData{
 		AuthToken: tk,
 		User:      *user,
 	})
@@ -122,5 +122,50 @@ func (api *Api) SignIn(resp *tcpws.Response, req *tcpws.Request) {
 
 	resp.StatusCode = http.StatusOK
 	resp.Status = SuccessfulSignIn
-	resp.Body = string(data)
+	resp.Body = string(response)
+}
+
+// /api/v1/signin/token
+func (api *Api) SignInByToken(resp *tcpws.Response, req *tcpws.Request) {
+	const op = "gochat.app.api.auth.SignInByToken"
+
+	var token entity.Token
+	err := json.Unmarshal([]byte(req.Body), &token)
+	if err != nil {
+		resp.StatusCode = http.StatusBadRequest
+		resp.Status = fmt.Errorf("%s: %w", op, err).Error()
+		return
+	}
+
+	err = api.app.AuthService.SignInByToken(req.Ctx(), token)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidToken):
+			resp.StatusCode = http.StatusUnauthorized
+			resp.Status = err.Error()
+		default:
+			resp.StatusCode = http.StatusInternalServerError
+			resp.Status = fmt.Errorf("%s: %w", op, err).Error()
+		}
+
+		return
+	}
+
+	user, err := api.app.UserService.FindById(req.Ctx(), token.UserId)
+	if err != nil {
+		resp.StatusCode = http.StatusInternalServerError
+		resp.Status = fmt.Errorf("%s: %w", op, err).Error()
+		return
+	}
+
+	response, err := json.Marshal(*user)
+	if err != nil {
+		resp.StatusCode = http.StatusInternalServerError
+		resp.Status = fmt.Errorf("%s: %w", op, err).Error()
+		return
+	}
+
+	resp.StatusCode = http.StatusOK
+	resp.Status = SuccessfulSignIn
+	resp.Body = string(response)
 }

@@ -13,17 +13,35 @@ import (
 var ErrUserLoginAlreadyExists = errors.New("user login already exists")
 
 type UserService interface {
+	// Create creates new user and returns it's id
+	// Errors: unknown
 	Create(ctx context.Context, user *entity.User) (int64, error)
+
+	// FindById returns user by id
+	// Errors: ErrUserNotFound, unknown
 	FindById(ctx context.Context, id int64) (*entity.User, error)
+
+	// FindByLogin returns user by login
+	// Errors: ErrUserNotFound, unknown
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
-	FindPublicUserById(ctx context.Context, id int64) (*entity.PublicUser, error)
-	FindPublicUserByLogin(ctx context.Context, login string) (*entity.PublicUser, error)
+
+	// Update updates user by id
+	// Errors: ErrUserUpdateFailed
 	Update(ctx context.Context, user *entity.User) error
+
+	// Delete deletes user by id
+	// Errors: ErrUserDeleteFailed
 	Delete(ctx context.Context, id int64) error
 
+	// GetIdByLogin returns user id by login
 	GetIdByLogin(ctx context.Context, login string) int64
-	GetPublicUsersByConvId(ctx context.Context, convId int64) ([]entity.PublicUser, error)
 
+	// GetPublicUsersByConvId returns public users
+	// Errors: unknown
+	GetPublicUsers(ctx context.Context) ([]entity.PublicUser, error)
+
+	// ValidateLogin validates login
+	// Errors: ErrUserLoginAlreadyExists, unknown
 	ValidateLogin(ctx context.Context, login string) error
 }
 
@@ -39,6 +57,7 @@ func NewUserService(repository repo.UserRepository, opts *cache.CacheOpts) UserS
 	}
 }
 
+// Create is implementing interface UserService
 func (us *userService) Create(ctx context.Context, user *entity.User) (int64, error) {
 	id, err := us.repository.Create(ctx, user)
 	if err != nil {
@@ -52,6 +71,7 @@ func (us *userService) Create(ctx context.Context, user *entity.User) (int64, er
 	return id, nil
 }
 
+// FindById is implementing interface UserService
 func (us *userService) FindById(ctx context.Context, id int64) (*entity.User, error) {
 	key := fmt.Sprintf("%d", id)
 
@@ -69,44 +89,12 @@ func (us *userService) FindById(ctx context.Context, id int64) (*entity.User, er
 	return user, nil
 }
 
+// FindByLogin is implementing interface UserService
 func (us *userService) FindByLogin(ctx context.Context, login string) (*entity.User, error) {
 	return us.repository.FindByLogin(ctx, login)
 }
 
-func (us *userService) FindPublicUserById(
-	ctx context.Context,
-	id int64,
-) (*entity.PublicUser, error) {
-	user, err := us.FindById(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &entity.PublicUser{
-		ID:    user.ID,
-		Login: user.Login,
-		Name:  user.Name,
-		Color: user.Color,
-	}, nil
-}
-
-func (us *userService) FindPublicUserByLogin(
-	ctx context.Context,
-	login string,
-) (*entity.PublicUser, error) {
-	user, err := us.FindByLogin(ctx, login)
-	if err != nil {
-		return nil, err
-	}
-
-	return &entity.PublicUser{
-		ID:    user.ID,
-		Login: user.Login,
-		Name:  user.Name,
-		Color: user.Color,
-	}, nil
-}
-
+// Update is implementing interface UserService
 func (us *userService) Update(
 	ctx context.Context,
 	user *entity.User,
@@ -120,6 +108,7 @@ func (us *userService) Update(
 	return us.repository.Update(ctx, user)
 }
 
+// Delete is implementing interface UserService
 func (us *userService) Delete(ctx context.Context, Id int64) error {
 	key := fmt.Sprintf("%d", Id)
 
@@ -130,17 +119,19 @@ func (us *userService) Delete(ctx context.Context, Id int64) error {
 	return us.repository.Delete(ctx, Id)
 }
 
+// Delete is implementing interface UserService
 func (us *userService) GetIdByLogin(ctx context.Context, login string) int64 {
 	return us.repository.GetIdByLogin(ctx, login)
 }
 
-func (us *userService) GetPublicUsersByConvId(
+// GetPublicUsers is implementing interface UserService
+func (us *userService) GetPublicUsers(
 	ctx context.Context,
-	convId int64,
 ) ([]entity.PublicUser, error) {
-	return us.repository.GetPublicUsersByConvId(ctx, convId)
+	return us.repository.GetPublicUsers(ctx)
 }
 
+// ValidateLogin is implementing interface ValidateLogin
 func (us *userService) ValidateLogin(ctx context.Context, login string) error {
 	_, err := us.FindByLogin(ctx, login)
 	if err != nil {
