@@ -82,6 +82,7 @@ func InitRoutes(mux *tcpws.MuxHandler, core *core.Core) *tcpws.MuxHandler {
 
 	mux.HandleFunc("POST", "/api/v1/signup", handlers.SignUp)
 	mux.HandleFunc("POST", "/api/v1/signin", handlers.SignIn)
+	mux.HandleFunc(tcpws.ProtoWS, "/api/v1/chatting", handlers.Chatting)
 
 	return mux
 }

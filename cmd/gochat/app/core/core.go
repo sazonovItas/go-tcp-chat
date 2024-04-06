@@ -18,12 +18,9 @@ type Core struct {
 	Logger *slog.Logger
 
 	// Services that using by app
-	ConversationService service.ConversationService
-	FriendService       service.FriendService
-	MessageService      service.MessageService
-	ParticipantService  service.ParticipantService
-	UserService         service.UserService
-	AuthService         service.AuthService
+	MessageService service.MessageService
+	UserService    service.UserService
+	AuthService    service.AuthService
 }
 
 func New(storage *storage.Storage, cacheStorage *redis.Client, lg *slog.Logger) *Core {
@@ -31,37 +28,8 @@ func New(storage *storage.Storage, cacheStorage *redis.Client, lg *slog.Logger) 
 
 	core.Logger = lg
 
-	// init conversation service
-	core.ConversationService = service.NewConversationService(
-		repo.NewConversationRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "conversation",
-			DefaultExpiration: time.Minute * 5,
-		},
-	)
-
-	// init friend service
-	core.FriendService = service.NewFriendService(
-		repo.NewFriendRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "friend",
-			DefaultExpiration: time.Minute * 5,
-		},
-	)
-
 	// init message service
 	core.MessageService = service.NewMessageService(repo.NewMessageRepository(storage), nil)
-
-	// init participant service
-	core.ParticipantService = service.NewParticipantService(
-		repo.NewParticipantRepository(storage),
-		&cache.CacheOpts{
-			Client:            cacheStorage,
-			KeyPrefix:         "participant",
-			DefaultExpiration: time.Minute * 5,
-		})
 
 	// init user service
 	core.UserService = service.NewUserService(

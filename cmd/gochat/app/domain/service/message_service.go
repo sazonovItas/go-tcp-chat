@@ -40,7 +40,7 @@ type MessageService interface {
 
 type messageService struct {
 	repository repo.MessageRepository
-	cache      cache.Cache[entity.Participant]
+	cache      cache.Cache[entity.Message]
 }
 
 func NewMessageService(repository repo.MessageRepository, opts *cache.CacheOpts) MessageService {

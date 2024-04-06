@@ -25,59 +25,17 @@ CREATE TRIGGER updated_at_users_trgr
   ON users 
   FOR EACH ROW EXECUTE PROCEDURE updated_at_trigger();
 
-CREATE TABLE IF NOT EXISTS conversations (
-  id                  bigserial             NOT NULL,
-  title               VARCHAR(100)          NOT NULL,
-  conversation_kind   int                   NOT NULL,
-  creator_id          bigserial             NOT NULL,
-  created_at          timestamptz           NOT NULL  DEFAULT NOW(),
-  updated_at          timestamptz           NOT NULL  DEFAULT NOW(),
-  PRIMARY KEY (id),
-  FOREIGN KEY (creator_id) REFERENCES users (id)
-);
-
-CREATE TRIGGER updated_at_conversations_trgr
-  BEFORE UPDATE
-  ON conversations 
-  FOR EACH ROW EXECUTE PROCEDURE updated_at_trigger();
-
-CREATE TABLE IF NOT EXISTS participants (
-  id              bigserial     NOT NULL,
-  user_id         bigserial     NOT NULL,
-  conversation_id bigserial     NOT NULL,
-  created_at      timestamptz   NOT NULL  DEFAULT NOW(),
-  updated_at      timestamptz   NOT NULL  DEFAULT NOW(),
-  PRIMARY KEY (id),
-  FOREIGN KEY (user_id) REFERENCES users (id),
-  FOREIGN KEY (conversation_id) REFERENCES conversations (id)
-);
-
-CREATE TRIGGER updated_at_participants_trgr
-  BEFORE UPDATE
-  ON participants 
-  FOR EACH ROW EXECUTE PROCEDURE updated_at_trigger();
-
 CREATE TABLE IF NOT EXISTS messages (
   id                uuid            NOT NULL,
   sender_id         bigserial       NOT NULL,
-  conversation_id   bigserial       NOT NULL,
   message_kind      int             NOT NULL,
   message           VARCHAR(1024)   NOT NULL,
   created_at        timestamptz     NOT NULL  DEFAULT NOW(),
   PRIMARY KEY (id),
   FOREIGN KEY (sender_id) REFERENCES users (id),
-  FOREIGN KEY (conversation_id) REFERENCES conversations (id)
 );
 
-CREATE TABLE IF NOT EXISTS friends (
-  id          bigserial   NOT NULL,
-  user_id     bigserial   NOT NULL,
-  friend_id   bigserial   NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users (id),
-  FOREIGN KEY (friend_id) REFERENCES users (id)
-);
-
-CREATE TRIGGER updated_at_friends_trgr
+CREATE TRIGGER updated_at_messages_trgr
   BEFORE UPDATE
-  ON friends 
+  ON messages 
   FOR EACH ROW EXECUTE PROCEDURE updated_at_trigger();

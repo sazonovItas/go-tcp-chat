@@ -24,8 +24,9 @@ func Timeout(timeout time.Duration) tcpws.Middleware {
 				}()
 
 				req = req.WithContext(ctx)
-				next.Serve(resp, req)
 			}
+
+			next.Serve(resp, req)
 		}
 
 		return fn

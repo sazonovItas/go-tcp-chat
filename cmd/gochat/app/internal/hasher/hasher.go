@@ -28,6 +28,7 @@ func New(cost int) Hasher {
 	return &hasher{cost: cost}
 }
 
+// Password is implementing Hasher interface
 func (h *hasher) Password(password string) ([]byte, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), h.cost)
 	if err != nil {
@@ -37,6 +38,7 @@ func (h *hasher) Password(password string) ([]byte, error) {
 	return hashedPassword, nil
 }
 
+// Compare is implementing Hasher interface
 func (h *hasher) Compare(hashedPassword []byte, password []byte) error {
 	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
 	if err != nil {

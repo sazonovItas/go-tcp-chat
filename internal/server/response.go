@@ -27,7 +27,7 @@ func newResponse(conn *gotcpws.Conn) *Response {
 	}
 }
 
-func (resp *Response) write() error {
+func (resp *Response) Write() error {
 	type response struct {
 		Status     string `json:"status"`
 		StatusCode int    `json:"status_code"`

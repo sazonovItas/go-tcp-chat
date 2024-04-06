@@ -50,16 +50,13 @@ func (mh *MuxHandler) newMiddlewareHandler(h HandlerFunc) HandlerFunc {
 
 // Set handler function for method and url
 // Will panic if can't add handler to routing tree
-// Middlewares will be used if request proto is ProtoWS
 func (mh *MuxHandler) HandleFunc(method, url string, handler HandlerFunc) {
 	p, err := parsePattern(method, url)
 	if err != nil {
 		panic(err)
 	}
 
-	if method != ProtoWS {
-		handler = mh.newMiddlewareHandler(handler)
-	}
+	handler = mh.newMiddlewareHandler(handler)
 
 	mh.routerTree.addPattern(p, handler)
 }
@@ -85,6 +82,7 @@ func (mh *MuxHandler) Serve(conn *gotcpws.Conn) {
 
 	n, m := mh.routerTree.match(request.Method, request.Url)
 	if n == nil {
+		log.Printf("mismatched route")
 		return
 	}
 
@@ -98,5 +96,8 @@ func (mh *MuxHandler) Serve(conn *gotcpws.Conn) {
 	}
 
 	handler.Serve(response, request)
-	_ = response.write()
+
+	if request.Proto != ProtoWS {
+		_ = response.Write()
+	}
 }
