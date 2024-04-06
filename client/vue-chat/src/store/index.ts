@@ -52,6 +52,11 @@ const store: Store<IState> = createStore({
     updateMessages(state, payload) {
       state.messages = payload.messages;
     },
+    logOut(state) {
+      state.messages = new Array<IMessage>();
+      state.token = undefined;
+      state.user = undefined;
+    },
   },
   actions: {},
   modules: {},

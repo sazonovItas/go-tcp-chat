@@ -14,9 +14,12 @@
   "main": "background.js",
   "dependencies": {
     "@electron/remote": "^2.1.2",
-    "@quasar/extras": "^1.0.0",
+    "@hbilal_9/vue3-chat-scroll": "^0.0.4",
+    "@ts-pro/vue-eternal-loading": "^1.3.1",
     "@types/electron": "^1.6.10",
     "@types/electron-store": "^3.2.0",
+    "@vueuse/components": "^10.9.0",
+    "@vueuse/core": "^10.9.0",
     "core-js": "^3.8.3",
     "electron": "^29.1.4",
     "electron-store": "^8.2.0",
@@ -28,12 +31,14 @@
     "os": "^0.1.2",
     "path": "^0.12.7",
     "primevue": "^3.50.0",
-    "quasar": "^2.0.0",
     "sass-loader": "^14.1.1",
     "timers": "^0.1.1",
     "ts-loader": "~8.2.0",
     "typescript-map": "^0.1.0",
+    "v3-infinite-loading": "^1.3.1",
     "vue": "^3.2.13",
+    "vue-chat-scroll": "^2.0.0-alpha.4",
+    "vue-infinite-loading": "^2.4.5",
     "vue-router": "^4.0.3",
     "vue3-toastify": "^0.2.1",
     "vuex": "^4.0.0",
@@ -56,7 +61,6 @@
     "file": "^0.2.2",
     "system": "^2.0.1",
     "typescript": "~4.5.5",
-    "vue-cli-plugin-electron-builder": "~2.1.1",
-    "vue-cli-plugin-quasar": "~5.0.2"
+    "vue-cli-plugin-electron-builder": "~2.1.1"
   }
 }

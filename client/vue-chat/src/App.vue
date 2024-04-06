@@ -1,16 +1,14 @@
 <template>
-  <v-app />
+  <div class="v-container">
+    <router-view></router-view>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import vApp from "./components/v-app.vue";
 
 export default defineComponent({
   methods: {},
-  components: {
-    vApp,
-  },
 });
 </script>
 
@@ -28,6 +26,18 @@ export default defineComponent({
 * {
   margin: 0;
   padding: 0;
+}
+
+.v-container {
+  width: 100%;
+  height: 100%;
+  min-width: 550px;
+  max-width: 880px;
+
+  align-self: center;
+
+  display: flex;
+  justify-content: center;
 }
 
 textarea {

@@ -22,6 +22,5 @@ module.exports = defineConfig({
     electronBuilder: {
       nodeIntegration: true,
     },
-    quasar: {},
   },
 });
