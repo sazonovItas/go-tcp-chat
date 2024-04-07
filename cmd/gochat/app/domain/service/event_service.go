@@ -131,6 +131,8 @@ func (eb *eventBus) Publish(event entity.Event) {
 
 	subscribers := eb.subscribers[event.Type]
 	for _, subscriber := range subscribers {
-		subscriber <- event
+		if subscriber != nil {
+			subscriber <- event
+		}
 	}
 }

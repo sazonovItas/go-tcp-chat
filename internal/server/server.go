@@ -26,7 +26,6 @@ func ListenAndServe(addr string, handler HandleFunc) error {
 		Addr:    addr,
 		Handler: handler,
 		connwg:  &sync.WaitGroup{},
-		conns:   map[*gotcpws.Conn]struct{}{},
 	}
 	return server.ListenAndServe()
 }
@@ -37,7 +36,6 @@ func NewServer(addr string, handler HandleFunc) *Server {
 		Addr:    addr,
 		Handler: handler,
 		connwg:  &sync.WaitGroup{},
-		conns:   map[*gotcpws.Conn]struct{}{},
 	}
 }
 
@@ -48,10 +46,6 @@ type Server struct {
 
 	// ln is listener for addr
 	ln net.Listener
-
-	// conns is storage for active connections
-	mu    sync.Mutex
-	conns map[*gotcpws.Conn]struct{}
 
 	// connwg wait group for waiting until all serving connections are done
 	connwg *sync.WaitGroup
@@ -92,15 +86,12 @@ func (srv *Server) ListenAndServe() error {
 		// Serve connection
 		go func() {
 			defer func() {
-				srv.mu.Lock()
-				delete(srv.conns, conn)
-				srv.mu.Unlock()
-
 				srv.connwg.Done()
+				conn.Close()
+
 				log.Println("closed connection:", conn.RemoteAddr())
 			}()
 
-			srv.conns[conn] = struct{}{}
 			srv.connwg.Add(1)
 			srv.Serve(conn)
 		}()

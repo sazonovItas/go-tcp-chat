@@ -49,11 +49,16 @@ func (api *Api) Chatting(resp *tcpws.Response, req *tcpws.Request) {
 		return
 	}
 
+	stopch := make(chan struct{})
+	defer close(stopch)
+
 	eventch := make(chan entity.Event, 5)
 	subscriberId := api.app.EventService.Subscribe(service.NewMessageEventType, eventch)
 	defer func() {
 		api.app.EventService.Unsubscribe(service.NewMessageEventType, subscriberId)
 		close(eventch)
+
+		stopch <- struct{}{}
 	}()
 
 	api.app.Logger.Info(
@@ -63,9 +68,6 @@ func (api *Api) Chatting(resp *tcpws.Response, req *tcpws.Request) {
 		"user_id",
 		token.UserId,
 	)
-
-	stopch := make(chan struct{})
-	defer close(stopch)
 
 	// send events
 	go func() {
@@ -111,7 +113,7 @@ func (api *Api) Chatting(resp *tcpws.Response, req *tcpws.Request) {
 			default:
 				api.app.Logger.Error("read frame", "error", err.Error())
 			}
-			stopch <- struct{}{}
+			// stopch <- struct{}{}
 			break
 		}
 

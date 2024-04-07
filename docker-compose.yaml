@@ -33,12 +33,13 @@ services:
 
   chat:
     image: gochat-test:v0.0.1
+    container_name: gochat
+    restart: always
+
     build:
       context: .
     command: ./chat
 
-    container_name: gochat
-    restart: always
     expose:
       - 5050
     ports:
@@ -54,4 +55,3 @@ services:
 networks:
   app_network:
     name: app_network
-    driver: bridge
