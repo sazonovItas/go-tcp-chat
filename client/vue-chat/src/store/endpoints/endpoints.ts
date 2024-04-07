@@ -23,3 +23,5 @@ export interface IMessagesRequest {
 export interface IMessagesResponse {
   messages: Array<IMessage>;
 }
+
+export const memberEndpoint = "/api/v1/member";

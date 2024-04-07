@@ -21,6 +21,7 @@ type Core struct {
 	MessageService service.MessageService
 	UserService    service.UserService
 	AuthService    service.AuthService
+	EventService   service.EventService
 }
 
 func New(storage *storage.Storage, cacheStorage *redis.Client, lg *slog.Logger) *Core {
@@ -49,6 +50,9 @@ func New(storage *storage.Storage, cacheStorage *redis.Client, lg *slog.Logger) 
 	core.AuthService = service.NewAuthService(
 		repo.NewTokenRepository(tokenStorage, core.UserService),
 	)
+
+	// init event service
+	core.EventService = service.NewEventService()
 
 	return &core
 }

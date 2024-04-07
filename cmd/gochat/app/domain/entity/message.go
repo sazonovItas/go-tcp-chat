@@ -24,14 +24,4 @@ type Message struct {
 	MessageKind MessageKind `db:"message_kind" json:"message_kind"`
 	Message     string      `db:"message"      json:"message"`
 	CreatedAt   time.Time   `db:"created_at"   json:"created_at"`
-	UpdatedAt   time.Time   `db:"updated_at"   json:"updated_at"`
-}
-
-type MarshalMessage struct {
-	ID          string      `json:"id"`
-	SenderID    int64       `json:"sender_id"`
-	MessageKind MessageKind `json:"message_kind"`
-	Message     string      `json:"message"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
 }

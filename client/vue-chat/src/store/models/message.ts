@@ -1,7 +1,6 @@
 export interface IMessage {
-  guid: string;
+  id: string;
   sender_id: number;
-  conversation_id: number;
   message_kind: number;
   message: string;
   created_at: string;

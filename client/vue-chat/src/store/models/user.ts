@@ -5,3 +5,10 @@ export interface IUser {
   color: string;
   password_hash: string;
 }
+
+export interface IPublicUser {
+  id: number;
+  name: string;
+  login: string;
+  color: string;
+}

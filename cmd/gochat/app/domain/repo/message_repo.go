@@ -88,8 +88,8 @@ func (ms *messageRepository) Create(
 	result, err := ms.storage.NamedExecContext(
 		ctx,
 		`
-    INSERT INTO chat.messages (id, sender_id, message_kind, message, created_at, updated_at)
-    VALUES (:id, :sender_id, :message_kind, :message, :created_at, :updated_at)
+    INSERT INTO chat.messages (id, sender_id, message_kind, message, created_at)
+    VALUES (:id, :sender_id, :message_kind, :message, :created_at)
     `,
 		msg,
 	)
@@ -140,9 +140,8 @@ func (ms *messageRepository) Update(ctx context.Context, message *entity.Message
 
 	result, err := ms.storage.ExecContext(
 		ctx,
-		"UPDATE chat.messages SET message=$1, updated_at=$2 WHERE id=$3",
+		"UPDATE chat.messages SET message=$1  WHERE id=$2",
 		message.Message,
-		message.CreatedAt,
 		message.ID,
 	)
 	if err != nil {

@@ -17,7 +17,7 @@ const (
 )
 
 // /api/v1/messages
-func (api *Api) MessagesPrevTimestamp(resp *tcpws.Response, req *tcpws.Request) {
+func (api *Api) GetMessagesPrevTimestamp(resp *tcpws.Response, req *tcpws.Request) {
 	const op = "gochat.app.api.messages.MessagesPrevTimestamp"
 
 	type request struct {

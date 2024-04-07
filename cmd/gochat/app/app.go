@@ -96,7 +96,11 @@ func InitRoutes(mux *tcpws.MuxHandler, core *core.Core) *tcpws.MuxHandler {
 	mux.HandleFunc(tcpws.ProtoWS, "/api/v1/chatting", handlers.Chatting)
 
 	// messages handler
-	mux.HandleFunc("GET", "/api/v1/messages", handlers.MessagesPrevTimestamp)
+	mux.HandleFunc("GET", "/api/v1/messages", handlers.GetMessagesPrevTimestamp)
+
+	// user handler
+	mux.HandleFunc("GET", "/api/v1/member/{id}", handlers.GetChatMemberById)
+	mux.HandleFunc("GET", "/api/v1/member", handlers.GetChatMembers)
 
 	return mux
 }

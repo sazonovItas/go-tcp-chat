@@ -25,6 +25,14 @@ type UserService interface {
 	// Errors: ErrUserNotFound, unknown
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
 
+	// FindById returns user by id
+	// Errors: ErrUserNotFound, unknown
+	FindPublicUserById(ctx context.Context, id int64) (*entity.PublicUser, error)
+
+	// FindByLogin returns user by login
+	// Errors: ErrUserNotFound, unknown
+	FindPublicUserByLogin(ctx context.Context, login string) (*entity.PublicUser, error)
+
 	// Update updates user by id
 	// Errors: ErrUserUpdateFailed
 	Update(ctx context.Context, user *entity.User) error
@@ -92,6 +100,55 @@ func (us *userService) FindById(ctx context.Context, id int64) (*entity.User, er
 // FindByLogin is implementing interface UserService
 func (us *userService) FindByLogin(ctx context.Context, login string) (*entity.User, error) {
 	return us.repository.FindByLogin(ctx, login)
+}
+
+// FindPublicUserById is implementing interface UserService
+func (us *userService) FindPublicUserById(
+	ctx context.Context,
+	id int64,
+) (*entity.PublicUser, error) {
+	key := fmt.Sprintf("%d", id)
+
+	cached, err := us.cache.Get(ctx, key)
+	if err == nil {
+		return &entity.PublicUser{
+			ID:    cached.ID,
+			Login: cached.Login,
+			Name:  cached.Name,
+			Color: cached.Color,
+		}, nil
+	}
+
+	user, err := us.repository.FindById(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = us.cache.Set(ctx, key, *user, 0)
+	return &entity.PublicUser{
+		ID:    user.ID,
+		Login: user.Login,
+		Name:  user.Name,
+		Color: user.Color,
+	}, nil
+}
+
+// FindPublicUserByLogin is implementing interface UserService
+func (us *userService) FindPublicUserByLogin(
+	ctx context.Context,
+	login string,
+) (*entity.PublicUser, error) {
+	user, err := us.repository.FindByLogin(ctx, login)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.PublicUser{
+		ID:    user.ID,
+		Login: user.Login,
+		Name:  user.Name,
+		Color: user.Color,
+	}, nil
 }
 
 // Update is implementing interface UserService

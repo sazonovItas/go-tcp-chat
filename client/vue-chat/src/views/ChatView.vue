@@ -18,10 +18,7 @@
       </div>
       <div class="v-chat-container-messages" @scroll="onScroll">
         <VueEternalLoading :load="load" class="v-loader" />
-        <ul
-          class="messages"
-          v-chat-scroll="{ smooth: true, notSmoothOnInit: true }"
-        >
+        <ul class="messages">
           <li
             class="message"
             v-for="(m, idx) in getMessages"
@@ -34,14 +31,19 @@
                 'msg-from-other': m.sender_id !== user.id,
               }"
             >
-              <div :style="{ color: user.color, margin: '0 0 5px 0' }">
-                {{ user.name }}
+              <div
+                :style="{
+                  color: members?.get(m.sender_id)?.color,
+                  margin: '0 0 5px 0',
+                }"
+              >
+                {{ members?.get(m.sender_id)?.name }}
               </div>
               <div>
                 {{ m.message }}
               </div>
               <div :style="{ color: '#bbbbbb', margin: '5px 0 0 0' }">
-                {{ new Date(m.created_at).toUTCString() }}
+                {{ new Date(m.created_at) }}
               </div>
             </div>
           </li>
@@ -82,12 +84,15 @@ import { Connect } from "../lib/reqresp-conn/retry_conn";
 import { ResponseToast, NotifySystem } from "../lib/toasts/notifications";
 import { successResponse, unauthResponse } from "../lib/reqresp-conn/reqresp";
 import { IMessage } from "../store/models/message";
+import { IPublicUser } from "../store/models/user";
 import { Request } from "../lib/reqresp-conn/conn";
 import {
   IMessagesRequest,
   IMessagesResponse,
   messagesEndpoint,
+  memberEndpoint,
 } from "../store/endpoints/endpoints";
+import { IEvent } from "../store/models/event";
 
 const MESSAGES_CNT = 25;
 
@@ -99,14 +104,18 @@ export default defineComponent({
     const messageToSend = ref("");
 
     const wssock = new WSsocket(store.state.host, store.state.port);
+    const members = ref(new Map<number, IPublicUser>([]));
+    const messages = ref(store.state.messages);
+
     return {
       store: store,
       user: user,
       wssock: wssock,
       messageToSend: messageToSend,
       connection_ready: connection_ready,
-      messages: store.state.messages,
-      detach_scroll: false,
+      members: members,
+      messages: messages,
+      detach_scroll: true,
     };
   },
   mounted() {
@@ -123,6 +132,36 @@ export default defineComponent({
       retryConnection();
     }, this.store.state.retryTimeout);
 
+    Request(
+      this.store.state.host,
+      this.store.state.port,
+      this.store.state.requestTimeout,
+      {
+        method: "GET",
+        url: memberEndpoint,
+        proto: "http",
+
+        header: new TSMap([["Content-Type", "application/json"]]),
+        body: "",
+      }
+    )
+      .then((value) => {
+        ResponseToast.notify(value.status_code, value.status);
+
+        if (successResponse(value)) {
+          try {
+            const members: IPublicUser[] = JSON.parse(value.body);
+            this.members = new Map<number, IPublicUser>(
+              members.map((member: IPublicUser) => [member.id, member])
+            );
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+      });
     this.scroll_to_end();
   },
   components: {
@@ -173,9 +212,17 @@ export default defineComponent({
       let receivedMessages: IMessagesResponse;
       try {
         receivedMessages = JSON.parse(response.body);
+        NotifySystem.notify("info", response.body);
+        this.store.commit("unshiftMessages", receivedMessages.messages);
       } catch (e) {
         console.log(e);
+        // loaded(MESSAGES_CNT, MESSAGES_CNT);
         return;
+      }
+      if (this.detach_scroll) {
+        setTimeout(() => {
+          this.scroll_to_end();
+        }, 50);
       }
 
       loaded(
@@ -190,7 +237,7 @@ export default defineComponent({
         return;
       }
 
-      if (!this.connection_ready) {
+      if (!this.connection_ready || !this.wssock) {
         NotifySystem.notify(
           "warning",
           "cannot send message: disconnected from the server"
@@ -198,22 +245,25 @@ export default defineComponent({
         return;
       }
 
-      this.store.commit("appendMessage", {
-        guid: "guid-12345",
-        sender_id: this.user.id,
-        convesation_id: 1,
-        message_kind: 1,
-        message: this.messageToSend.trim(),
-        created_at: new Date(Date.now()),
-        updated_at: new Date(Date.now()),
-      });
+      const msg: IEvent = {
+        type: "NewMessageEvent",
+        payload: {
+          id: "",
+          sender_id: this.user.id,
+          message_kind: 2,
+          message: this.messageToSend.trim(),
+          created_at: new Date(Date.now()),
+          updated_at: new Date(Date.now()),
+        },
+      };
+
+      try {
+        this.wssock.socketSend(JSON.stringify(msg), 0x1, true);
+      } catch (e) {
+        console.log(e);
+      }
 
       this.messageToSend = "";
-      if (this.detach_scroll) {
-        setTimeout(() => {
-          this.scroll_to_end();
-        }, 80);
-      }
     },
     onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
       if (scrollTop + clientHeight >= scrollHeight - 30) {
@@ -238,8 +288,13 @@ export default defineComponent({
         },
         (data: Buffer) => {
           try {
-            const msg = JSON.parse(data.toString());
-            NotifySystem.notify("info", msg);
+            const msg: IEvent = JSON.parse(data.toString());
+            this.store.commit("appendMessage", msg.payload);
+            if (this.detach_scroll) {
+              setTimeout(() => {
+                this.scroll_to_end();
+              }, 50);
+            }
           } catch (e) {
             console.log(e);
           }
@@ -257,8 +312,7 @@ export default defineComponent({
           if (successResponse(value)) {
             NotifySystem.notify("success", "connected to server");
             this.connection_ready = true;
-          }
-          if (unauthResponse(value)) {
+          } else if (unauthResponse(value)) {
             this.log_out();
           } else {
             NotifySystem.notify("warning", "cannot connect to server");
@@ -337,8 +391,6 @@ export default defineComponent({
 
 .v-user-description {
   padding: 20px;
-
-  width: 200px;
 
   display: flex;
   flex-wrap: wrap;

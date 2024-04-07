@@ -33,7 +33,7 @@ const store: Store<IState> = createStore({
       retryTimeout: 5000,
       user: undefined,
       token: undefined,
-      messages: new Array<IMessage>(),
+      messages: undefined,
       host: "",
       port: 0,
     };
@@ -45,9 +45,13 @@ const store: Store<IState> = createStore({
       state.token = payload.token;
       state.host = payload.host;
       state.port = payload.port;
+      state.messages = new Array<IMessage>();
     },
     appendMessage(state, payload) {
       state.messages?.push(payload);
+    },
+    unshiftMessages(state, payload) {
+      state.messages?.unshift(...payload);
     },
     updateMessages(state, payload) {
       state.messages = payload.messages;
