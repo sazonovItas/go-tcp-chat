@@ -3,12 +3,13 @@ import { IRequest, IResponse } from "./reqresp";
 import { TSMap } from "typescript-map";
 import { HttpStatus, httpStatusTextByCode } from "http-status-ts";
 import { chattingEndpoint } from "@/store/endpoints/endpoints";
-import { NotifySystem } from "../toasts/notifications";
+import { IToken } from "@/store/models/token";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function Connect(
   socket: WSSocket,
+  token: IToken,
   timeout: number,
 
   onConnect: () => void,
@@ -31,7 +32,7 @@ export async function Connect(
     header: new TSMap<string, string>([["Content-Type", "application/json"]]),
 
     url: chattingEndpoint,
-    body: "",
+    body: JSON.stringify(token),
   };
 
   socket.setOnConnect(() => {

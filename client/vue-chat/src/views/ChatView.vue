@@ -3,13 +3,7 @@
     <div class="v-chat-container">
       <div class="v-chat-container-header">
         <div class="v-user-description">
-          <vIcon
-            width="36px"
-            height="36px"
-            font_size="24px"
-            :title="user.name"
-            :color="user.color"
-          />
+          <vIcon width="36px" height="36px" font_size="24px" :title="user.name" :color="user.color" />
           <span :style="{ color: '#e9edef', padding: '6px 0 0 10px' }">{{
             user.name
           }}</span>
@@ -18,17 +12,11 @@
       </div>
       <div class="v-chat-container-messages" @scroll="onScroll">
         <VueEternalLoading :load="load" class="v-loader" />
-        <div
-          v-for="(m, idx) in getMessages"
-          :key="'m-' + idx"
-          style="clear: both"
-        >
-          <div
-            :class="{
-              'msg-from-me': m.sender_id === user.id,
-              'msg-from-other': m.sender_id !== user.id,
-            }"
-          >
+        <div v-for="(m, idx) in getMessages" :key="'m-' + idx" style="clear: both">
+          <div :class="{
+            'msg-from-me': m.sender_id === user.id,
+            'msg-from-other': m.sender_id !== user.id,
+          }">
             <div :style="{ color: user.color, margin: '0 0 5px 0' }">
               {{ user.name }}
             </div>
@@ -43,21 +31,11 @@
         <div ref="bottomMessage"></div>
       </div>
       <div class="v-chat-container-input">
-        <textarea
-          type="text"
-          wrap="soft"
-          class="send-input"
-          placeholder="Type a message"
-          v-model="messageToSend"
-          @keyup.enter="send_message"
-        />
+        <textarea type="text" wrap="soft" class="send-input" placeholder="Type a message" v-model="messageToSend"
+          maxlength="256" @keyup.enter="send_message" />
       </div>
     </div>
-    <vFooter
-      :host="store.state.host"
-      :port="store.state.port"
-      :connected="connection_ready"
-    />
+    <vFooter :host="store.state.host" :port="`${store.state.port}`" :connected="connection_ready" />
   </div>
 </template>
 
@@ -70,10 +48,17 @@ import vIcon from "../components/v-icon.vue";
 import { VueEternalLoading, LoadAction } from "@ts-pro/vue-eternal-loading";
 
 import WSsocket from "../lib/socket/wssocket";
+import { TSMap } from "typescript-map";
 import { Connect } from "../lib/reqresp-conn/retry_conn";
-import { NotifySystem } from "../lib/toasts/notifications";
-import { successResponse } from "../lib/reqresp-conn/reqresp";
+import { ResponseToast, NotifySystem } from "../lib/toasts/notifications";
+import { successResponse, unauthResponse } from "../lib/reqresp-conn/reqresp";
 import { IMessage } from "../store/models/message";
+import { Request } from "../lib/reqresp-conn/conn";
+import {
+  IMessagesRequest,
+  IMessagesResponse,
+  messagesEndpoint,
+} from "../store/endpoints/endpoints";
 
 const MESSAGES_CNT = 25;
 
@@ -125,19 +110,44 @@ export default defineComponent({
     load: async function ({ loaded }: LoadAction) {
       console.log("...loading");
 
-      this.store.state.messages.unshift({
-        guid: "guid-12345",
-        sender_id: 2,
-        convesation_id: 1,
-        message_kind: 1,
-        message: "loaded message",
-        created_at: new Date(Date.now()).toUTCString(),
-        updated_at: new Date(Date.now()).toUTCString(),
-      });
+      const request: IMessagesRequest = {
+        auth_token: this.store.state.token,
+        timestamp:
+          this.messages.length > 0
+            ? this.messages[0].created_at
+            : new Date(Date.now()),
+        limit: MESSAGES_CNT,
+      };
+      const response = await Request(
+        this.store.state.host,
+        this.store.state.port,
+        this.store.state.requestTimeout,
+        {
+          method: "GET",
+          url: messagesEndpoint,
+          proto: "http",
 
-      setTimeout(() => {
-        loaded(25, MESSAGES_CNT);
-      }, 2000);
+          header: new TSMap([["Content-Type", "application/json"]]),
+          body: JSON.stringify(request),
+        }
+      );
+
+      ResponseToast.notify(response.status_code, response.status);
+
+      let receivedMessages: IMessagesResponse;
+      try {
+        receivedMessages = JSON.parse(response.body);
+      } catch (e) {
+        console.log(e);
+        return;
+      }
+
+      loaded(
+        receivedMessages.messages?.length === undefined
+          ? 0
+          : receivedMessages.messages.length,
+        MESSAGES_CNT
+      );
     },
     send_message() {
       if (this.messageToSend.trim() === "") {
@@ -154,12 +164,12 @@ export default defineComponent({
 
       this.store.commit("appendMessage", {
         guid: "guid-12345",
-        sender_id: 2,
+        sender_id: this.user.id,
         convesation_id: 1,
         message_kind: 1,
         message: this.messageToSend.trim(),
-        created_at: new Date(Date.now()).toUTCString(),
-        updated_at: new Date(Date.now()).toUTCString(),
+        created_at: new Date(Date.now()),
+        updated_at: new Date(Date.now()),
       });
 
       this.messageToSend = "";
@@ -181,6 +191,7 @@ export default defineComponent({
 
       Connect(
         this.wssock,
+        this.store.state.token,
         this.store.state.retryTimeout,
 
         () => {
@@ -203,9 +214,13 @@ export default defineComponent({
         }
       )
         .then((value) => {
+          ResponseToast.notify(value.status_code, value.status);
           if (successResponse(value)) {
             NotifySystem.notify("success", "connected to server");
             this.connection_ready = true;
+          }
+          if (unauthResponse(value)) {
+            this.log_out();
           } else {
             NotifySystem.notify("warning", "cannot connect to server");
           }

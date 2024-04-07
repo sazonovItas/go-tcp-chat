@@ -5,33 +5,13 @@
     </div>
 
     <div class="v-auth-form">
-      <input
-        class="v-login-input"
-        type="text"
-        placeholder="login"
-        v-model="login"
-      />
-      <input
-        class="v-login-input"
-        type="password"
-        placeholder="password"
-        v-model="password"
-      />
+      <input class="v-login-input" type="text" placeholder="login" v-model="login" />
+      <input class="v-login-input" type="password" placeholder="password" v-model="password" />
 
       <div class="v-login-wrapper">
         <div class="v-login-host-port">
-          <input
-            class="v-login-input"
-            type="text"
-            placeholder="host"
-            v-model="host"
-          />
-          <input
-            class="v-login-input"
-            type="text"
-            placeholder="port"
-            v-model="port"
-          />
+          <input class="v-login-input" type="text" placeholder="host" v-model="host" />
+          <input class="v-login-input" type="text" placeholder="port" v-model="port" />
         </div>
       </div>
     </div>

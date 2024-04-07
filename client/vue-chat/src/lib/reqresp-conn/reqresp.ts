@@ -1,3 +1,4 @@
+import { HttpStatus, httpStatusTextByCode } from "http-status-ts";
 import { TSMap } from "typescript-map";
 
 export const ProtoHTTP = "http";
@@ -22,4 +23,8 @@ export interface IResponse {
 
 export function successResponse(resp: IResponse): boolean {
   return resp.status_code >= 200 && resp.status_code < 300;
+}
+
+export function unauthResponse(resp: IResponse): boolean {
+  return resp.status_code == HttpStatus.UNAUTHORIZED;
 }

@@ -1,9 +1,13 @@
 package postgres
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
@@ -21,7 +25,7 @@ const (
 // TODO: Add optional postgres config
 // TODO: Need to know more about conns and idle conns to database
 func New(cfg *config.Storage) (*storage.Storage, error) {
-	const op = "gochat.internal.storage.postgres.New"
+	const op = "gochat.app.storage.postgres.New"
 
 	// urlExample := "postgres://username:password@localhost:5432/database_name"
 	connUrl := fmt.Sprintf(
@@ -46,4 +50,44 @@ func New(cfg *config.Storage) (*storage.Storage, error) {
 	db.SetConnMaxIdleTime(maxIdleConnLifetime)
 
 	return &storage.Storage{DB: db}, nil
+}
+
+func Migrate(cfg *config.Storage, pathToSqlFiles, dbName string) error {
+	const op = "gochat.app.storage.postgres.Migrate"
+
+	connUrl := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Name,
+	)
+
+	db, err := sqlx.Connect("pgx", connUrl)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	driver, err := pgx.WithInstance(db.DB, &pgx.Config{})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://"+pathToSqlFiles, dbName, driver)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	defer m.Close()
+
+	err = m.Up()
+	if err != nil {
+		switch {
+		case errors.Is(err, migrate.ErrNoChange):
+			return nil
+		default:
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+	return nil
 }

@@ -1,15 +1,18 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/sazonovItas/gochat-tcp/cmd/gochat/app/domain/entity"
 	tcpws "github.com/sazonovItas/gochat-tcp/internal/server"
 )
 
 const (
-	ProtoNotSupported = "not supported protocol"
-	ReadyForMessages  = "ready for messages"
+	ProtoNotSupported   = "not supported protocol"
+	ReadyForMessages    = "ready for messages"
+	UnauthorizedMessage = "token expired"
 )
 
 // /api/v1/chatting
@@ -22,10 +25,22 @@ func (api *Api) Chatting(resp *tcpws.Response, req *tcpws.Request) {
 		return
 	}
 
+	var token entity.Token
+	if err := json.Unmarshal([]byte(req.Body), &token); err != nil {
+		resp.StatusCode = http.StatusBadRequest
+		resp.Status = ProtoNotSupported
+		return
+	}
+
+	if err := api.app.AuthService.ValidateToken(req.Ctx(), token); err != nil {
+		resp.StatusCode = http.StatusUnauthorized
+		resp.Status = UnauthorizedMessage
+		return
+	}
+
 	resp.StatusCode = http.StatusOK
 	resp.Status = ReadyForMessages
-	err := resp.Write()
-	if err != nil {
+	if err := resp.Write(); err != nil {
 		return
 	}
 
@@ -34,5 +49,5 @@ func (api *Api) Chatting(resp *tcpws.Response, req *tcpws.Request) {
 	)
 
 	// TODO: handle chatting connection
-	time.Sleep(time.Minute * 2)
+	time.Sleep(time.Second * 10)
 }

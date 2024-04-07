@@ -33,11 +33,18 @@ func InitApp(cfg *Config) (*Application, error) {
 	// init logger
 	app.Logger = NewLogger(cfg.Options.Env, cfg.Options.LogWriter)
 
+	// migrate storage
+	err := postgres.Migrate(&cfg.Storage, "./migrations", cfg.Storage.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	// init storage
 	db, err := postgres.New(&cfg.Storage)
 	if err != nil {
 		return nil, err
 	}
+
 	app.storage = db
 
 	// init cache storage
@@ -80,10 +87,16 @@ func (app *Application) Run() error {
 func InitRoutes(mux *tcpws.MuxHandler, core *core.Core) *tcpws.MuxHandler {
 	handlers := api.NewApi(core)
 
+	// auths handlers
 	mux.HandleFunc("POST", "/api/v1/signup", handlers.SignUp)
 	mux.HandleFunc("POST", "/api/v1/signin", handlers.SignIn)
 	mux.HandleFunc("POST", "/api/v1/signin/token", handlers.SignInByToken)
+
+	// chatting handler
 	mux.HandleFunc(tcpws.ProtoWS, "/api/v1/chatting", handlers.Chatting)
+
+	// messages handler
+	mux.HandleFunc("GET", "/api/v1/messages", handlers.MessagesPrevTimestamp)
 
 	return mux
 }
