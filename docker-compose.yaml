@@ -3,23 +3,33 @@ version: "3"
 services:
   cache:
     image: redis:alpine
+    container_name: gochat-cache
     restart: always
     expose:
       - 6379
+    ports:
+      - 6379:6379
     environment:
       - REDIS_PASSWORD=redis12345
       - REDIS_PORT=6379
       - REDIS_DATABASE=0
+    networks:
+      - app_network
 
   db:
     image: postgres:alpine
+    container_name: gochat-db
     restart: always
     expose:
       - 5432
+    ports:
+      - 5432:5432
     environment:
       - POSTGRES_DB=gochat
       - POSTGRES_USER=gochat_admin
       - POSTGRES_PASSWORD=gochat_admin12345
+    networks:
+      - app_network
 
   chat:
     image: gochat-test:v0.0.1
@@ -28,12 +38,20 @@ services:
     command: ./chat
 
     container_name: gochat
+    restart: always
     expose:
       - 5050
     ports:
       - 5050:5050
     environment:
-      - ENV=local
-
+      - ENV=dev
+    networks:
+      - app_network
     depends_on:
       - cache
+      - db
+
+networks:
+  app_network:
+    name: app_network
+    driver: bridge

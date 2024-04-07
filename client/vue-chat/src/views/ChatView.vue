@@ -295,6 +295,37 @@ export default defineComponent({
                 this.scroll_to_end();
               }, 50);
             }
+
+            if (!this.members?.get(msg.payload.sender_id)) {
+              Request(
+                this.store.state.host,
+                this.store.state.port,
+                this.store.state.requestTimeout,
+                {
+                  method: "GET",
+                  url: memberEndpoint + "/" + msg.payload.sender_id,
+                  proto: "http",
+
+                  header: new TSMap([["Content-Type", "application/json"]]),
+                  body: "",
+                }
+              )
+                .then((value) => {
+                  ResponseToast.notify(value.status_code, value.status);
+
+                  if (successResponse(value)) {
+                    try {
+                      const member: IPublicUser = JSON.parse(value.body);
+                      this.members.set(member.id, member);
+                    } catch (e) {
+                      console.log(e);
+                    }
+                  }
+                })
+                .catch((e) => {
+                  console.log(e);
+                });
+            }
           } catch (e) {
             console.log(e);
           }
