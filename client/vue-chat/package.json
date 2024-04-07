@@ -11,7 +11,8 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
-  "main": "background.js",
+  "main": "background",
+  "types": "dist/index",
   "dependencies": {
     "@electron/remote": "^2.1.2",
     "@hbilal_9/vue3-chat-scroll": "^0.0.4",

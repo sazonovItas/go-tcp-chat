@@ -3,7 +3,13 @@
     <div class="v-chat-container">
       <div class="v-chat-container-header">
         <div class="v-user-description">
-          <vIcon width="36px" height="36px" font_size="24px" :title="user.name" :color="user.color" />
+          <vIcon
+            width="36px"
+            height="36px"
+            font_size="24px"
+            :title="user.name"
+            :color="user.color"
+          />
           <span :style="{ color: '#e9edef', padding: '6px 0 0 10px' }">{{
             user.name
           }}</span>
@@ -12,30 +18,53 @@
       </div>
       <div class="v-chat-container-messages" @scroll="onScroll">
         <VueEternalLoading :load="load" class="v-loader" />
-        <div v-for="(m, idx) in getMessages" :key="'m-' + idx" style="clear: both">
-          <div :class="{
-            'msg-from-me': m.sender_id === user.id,
-            'msg-from-other': m.sender_id !== user.id,
-          }">
-            <div :style="{ color: user.color, margin: '0 0 5px 0' }">
-              {{ user.name }}
+        <ul
+          class="messages"
+          v-chat-scroll="{ smooth: true, notSmoothOnInit: true }"
+        >
+          <li
+            class="message"
+            v-for="(m, idx) in getMessages"
+            :key="'m-' + idx"
+            style="clear: both"
+          >
+            <div
+              :class="{
+                'msg-from-me': m.sender_id === user.id,
+                'msg-from-other': m.sender_id !== user.id,
+              }"
+            >
+              <div :style="{ color: user.color, margin: '0 0 5px 0' }">
+                {{ user.name }}
+              </div>
+              <div>
+                {{ m.message }}
+              </div>
+              <div :style="{ color: '#bbbbbb', margin: '5px 0 0 0' }">
+                {{ new Date(m.created_at).toUTCString() }}
+              </div>
             </div>
-            <div>
-              {{ m.message }}
-            </div>
-            <div :style="{ color: '#bbbbbb', margin: '5px 0 0 0' }">
-              {{ m.created_at }}
-            </div>
-          </div>
-        </div>
+          </li>
+        </ul>
         <div ref="bottomMessage"></div>
       </div>
       <div class="v-chat-container-input">
-        <textarea type="text" wrap="soft" class="send-input" placeholder="Type a message" v-model="messageToSend"
-          maxlength="256" @keyup.enter="send_message" />
+        <textarea
+          type="text"
+          wrap="soft"
+          class="send-input"
+          placeholder="Type a message"
+          v-model="messageToSend"
+          maxlength="256"
+          @keyup.enter="send_message"
+        />
       </div>
     </div>
-    <vFooter :host="store.state.host" :port="`${store.state.port}`" :connected="connection_ready" />
+    <vFooter
+      :host="store.state.host"
+      :port="`${store.state.port}`"
+      :connected="connection_ready"
+    />
   </div>
 </template>
 
@@ -132,7 +161,14 @@ export default defineComponent({
         }
       );
 
-      ResponseToast.notify(response.status_code, response.status);
+      if (unauthResponse(response)) {
+        this.log_out();
+        return;
+      }
+
+      if (!successResponse(response)) {
+        return;
+      }
 
       let receivedMessages: IMessagesResponse;
       try {
@@ -173,13 +209,16 @@ export default defineComponent({
       });
 
       this.messageToSend = "";
+      if (this.detach_scroll) {
+        setTimeout(() => {
+          this.scroll_to_end();
+        }, 80);
+      }
     },
     onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
-      if (scrollTop + clientHeight >= scrollHeight) {
-        console.log("scroll detach");
+      if (scrollTop + clientHeight >= scrollHeight - 30) {
         this.detach_scroll = true;
       } else {
-        console.log("scroll un detach");
         this.detach_scroll = false;
       }
     },

@@ -49,5 +49,5 @@ func (api *Api) Chatting(resp *tcpws.Response, req *tcpws.Request) {
 	)
 
 	// TODO: handle chatting connection
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 120)
 }
