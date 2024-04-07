@@ -66,17 +66,17 @@ func Migrate(cfg *config.Storage, pathToSqlFiles, dbName string) error {
 
 	db, err := sqlx.Connect("pgx", connUrl)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: failed to connect %w", op, err)
 	}
 
 	driver, err := pgx.WithInstance(db.DB, &pgx.Config{})
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: with instance %w", op, err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance("file://"+pathToSqlFiles, dbName, driver)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: new with database instance %w", op, err)
 	}
 	defer m.Close()
 
