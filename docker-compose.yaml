@@ -4,7 +4,7 @@ services:
   cache:
     image: redis:alpine
     container_name: gochat-cache
-    restart: always
+    restart: unless-stopped
     expose:
       - 6379
     environment:
@@ -22,18 +22,21 @@ services:
   db:
     image: postgres:alpine
     container_name: gochat-db
-    restart: always
+    restart: unless-stopped
     expose:
       - 5432
     environment:
+      - PGDATA=/var/lib/pgsql/data
       - POSTGRES_DB=gochat
       - POSTGRES_USER=gochat_admin
       - POSTGRES_PASSWORD=gochat_admin12345
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "gochat_admin", "-d", "gochat"]
       interval: 2s
-      timeout: 1s
+      timeout: 2s
       retries: 3
+    volumes:
+      - gochatpgdata:/var/lib/pgsql/data
     networks:
       app-network:
         aliases:
@@ -41,12 +44,13 @@ services:
         ipv4_address: 172.0.1.3
 
   chat:
+    build:
+      dockerfile: ./Dockerfile
+
     image: gochat-test:v0.0.1
     container_name: gochat
-    restart: always
+    restart: unless-stopped
 
-    build:
-      context: .
     command: ./chat
 
     ports:
@@ -61,6 +65,9 @@ services:
     networks:
       app-network:
         ipv4_address: 172.0.1.2
+
+volumes:
+  gochatpgdata:
 
 networks:
   app-network:
